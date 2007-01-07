@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<!--
+	Annotation Demo by Geof Glass, www.geof.net
+	The comments in this file are here to illustrate how to add annotation to a page.  I
+	have included comments about Moodle also, as this is a clearer example than the actual
+	Moodle code (which includes all the features of Moodle forums, not just annotations).
+	This looks complicated with the comments.  Scroll to the second entry below (id="m2")
+	to see how simple this stuff really is in practice.
+	-->
+	<title>Annotation Example</title>
+	<!-- This stylesheet includes styling for the annotation margin.  The code makes heavy
+	uses of CSS, so a stylesheet provides extensive controls over the look and feel of
+	the interface (e.g. add graphics or icons, change the look and position of the delete
+	button, number the annotation notes in the margin). -->
+	<link rel="stylesheet" type="text/css" href="example.css"/>
+	<!-- These all need to be included (except smart copy if you don't want it).  The order
+	for inclusion matters for some of them. -->
+	<script type="text/javascript" src="log.js"></script>
+	<script type="text/javascript" src="config.js"></script>
+	<script type="text/javascript" src="html-model.js"></script>
+	<script type="text/javascript" src="domutil.js"></script>
+	<script type="text/javascript" src="ranges.js"></script>
+	<script type="text/javascript" src="post-micro.js"></script>
+	<script type="text/javascript" src="rest-annotate.js"></script>
+	<script type="text/javascript" src="lang/en.js"></script>
+	<script type="text/javascript" src="annotation.js"></script>
+	<script type="text/javascript" src="smartcopy.js"></script>
+	<!-- annotationInit takes three parameters:
+	1. The base URL of the application.  The annotation directory should be beneath this.
+	   In the case of moodle, this is the URL of the Moodle directory. 
+	2. The name of the current user.  In Moodle this is the "username" field.
+	3. The name of the user whose annotations are to be shown.
+	4. The portion of the URL to strip.  If null, the database will store absolute URLs.
+	   Otherwise, this can be the URL preceding the path (e.g. http://my.host.name), in
+	   which case that portion of the URL is not stored (very useful if the host name
+	   might change - otherwise, moving to a new server would require a search and replace
+	   on annotation URLs in the database).  This should be more flexible and allow more 
+	   of the path to be stripped;  for now those are the two choices.
+	If you don't call smartcopyInit(), smartcopy will be disabled.
+	-->
+	<script type="text/javascript">
+		annotationInit( 'http://localhost:8080', 'anonymous', 'anonymous', null );
+		smartcopyInit( );
+	</script>
+</head>
+<!-- showAllAnnotations must be called to display all annotations on the page.  They can be 
+hidden again with a call to hideAllAnnotations.  You may want to create a button or other
+control to do this (as in Moodle).  The URL here is the URL of this page, although this 
+depends on the back-end implementation. In Moodle, it is the URL of the forum page (or
+whatever).  Here, the * is a wildcard.  See the entrylink within each entry. -->
+<body onload='showAllAnnotations( "http://localhost:8080/#*")'>
+	<h1>Web Annotation Demo</h1>
+
+	<!-- This is just used for debugging, don't worry about it: -->
+	<ul id="debug" style="display:none">
+		<li></li>
+	</ul>
+	
+	<!-- I'm using the article list for styling in the dom.  There's no need for it, and
+	no reason your list of entries should be an ol, or that your entries should be li
+	elements. -->
+	<ol id="articles">
+
+		<li id="m0" class="hentry">
+			<h3 class="entry-title">Henry IV, Part 1, Act I, Sc ii</h3>
+			<div class="entry-content">
+				<p>
+					FAL.
+				</p>
+				<p>Now, Hal, what time of day is it, lad?</p>
+				<p>
+					PRINCE.
+				</p>
+				<p>
+					Thou art so fat-witted, with drinking of old sack, and<br />
+					unbuttoning thee after supper, and sleeping upon benches<br />
+					after noon, that thou hast forgotten to demand that truly which<br />
+					thou wouldst truly know. What a devil hast thou to do with the<br />
+					time of the day? unless hours were cups of sack, and minutes<br />
+					capons, and the blessed Sun himself a fair hot wench in<br />
+					flame-coloured taffeta, I see no reason why thou shouldst be<br />
+					so superfluous to demand the time of the day.<br />
+				</p>
+			</div>
+			<p class="metadata">
+				<a rel="bookmark" href="http://localhost:8080/#m0">#</a>
+				<!-- The author, like the title, is stored with the annotation. -->
+				by <span class="author">Rufus Pollock</span>
+			</p>
+			<div class="notes">
+				<button class="createAnnotation" onclick="createAnnotation('m0',true)" title="Click here to create an annotation">&gt;</button>
+				<ol>
+					<li></li>
+				</ol>
+			</div>
+		</li>
+	
+		<!-- Each annotatable entry on the page must have a unique ID value and a class name
+		of xentry.  It also requires a number of pieces of data inside elements with certain
+		class names. -->
+		<li id="m1" class="hentry">
+			<!-- Every entry must have a field with a class of "title".  This is stored with the
+			annotation in the database and shown on the summary page in Moodle. -->
+			<h3 class="entry-title">About This Demo</h3>
+			
+			<!-- Every entry must have a content area marked by the "content" class.  The content
+			of this area should not change (so there shouldn't be user controls and stuff in here,
+			just content), as highlights are located relative to the start of this element.
+			Arbitrary HTML is permitted within the content element. I should point out though
+			that the annotation engine uses element ids and class values like a91 (a + a number), so
+			don't use those elswhere on the page. It also uses the class "annotation". -->
+			<div class="entry-content">
+				<p id='test1'>This is a demonstration of <a href="http://www.geof.net/code/annotation/">Marginalia</a>, my web 
+				annotation implementation.  You can highlight a passage of text, then type a
+				note in the margin to associate with it.  The complete version saves your annotations,
+				but for this demo I have not connected up a database:  if you reload this page,
+				your changes will disappear.</p>
+				
+				<p>Annotation works both in Firefox and Internet Explorer.  Other browsers may
+				display the annotations, but as far as I know you cannot create them with
+				other browsers (this may change as W3C standards are more widely adopted).
+				Note that previous versions of this demo would cause IE to crash;  this has
+				been fixed, nonetheless use of this page is <a href="../LICENSE.txt">at your own risk</a>.</p>
+				
+				<p>In addition to annotation, Firefox users will be able to try smart copy.
+				Select some text, then copy it somewhere (e.g. into an email message, a word
+				processor document, or the text box at the bottom of this page).  The copied
+				text will be prefixed by information about the source of the copy.  This is
+				intended as a feature for discussion forums, so that users can more easily refer
+				to other messages when they quote them.</p>
+			</div>
+			
+			<!-- The metadata class is something I added for styling.  It isn't used by annotation. -->
+			<p class="metadata">
+				<!-- The entrylink is the URL for this entry.  It is the key used to look up annotations
+				for this page (see the wildcard match in showAllAnnotations above).  In Moodle, this
+				is nothing like the URL passed to showAllAnnotations;  the necessary logic to connect
+				the two is in the AnnotationSummaryQuery class in lib.php.  This stand-alone
+				implementation is simpler.  Note that this URL should always be complete, starting
+				with the protocol (http://).-->
+				<a rel="bookmark" href="http://localhost:8080/#m1">#</a>
+				<!-- The published field is used by smartcopy, but isn't necessary for annotation.
+				Note the title attribute and its date format. -->
+				Last Updated <abbr class="published" title="2005-07-21T19:00-08:00">21 July 2005</abbr>
+				<!-- The author, like the title, is stored with the annotation. -->
+				by <span class="author">Geof Glass</span>
+			</p>
+			
+			<!-- There must be an element with a class of "notes", and that element must contain
+			exactly one ol element.  The ol is the actual annotation margin.  For note positioning to
+			work, it should be horizontally adjacent to the content area.  It doesn't matter how you
+			achieve that, whether through a nice CSS layout or a nasty table one. -->
+			<div class="notes">
+				<!-- Without this button to call createAnnotation there would be no way to make new 
+				annotations.  All other annotation controls are automatically added by the Javascript, 
+				but this one is under the control of the application (you could call this function 
+				from a pop-up menu, a button at the top of the page, whatever you want). -->
+				<button class="createAnnotation" onclick="createAnnotation('m1',true)" title="Click here to create an annotation">&gt;</button>
+				<ol>
+					<li></li>
+				</ol>
+			</div>
+		</li>
+	
+		<li id="m2" class="hentry">
+			<h3 class="entry-title">Detailed Instructions</h3>
+			<div class="entry-content">
+				<h4>Annotation</h4>
+				
+				<table>
+					<thead>
+						<tr>
+							<th>Action</th>
+							<th>User Interface</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Creating an annotation</td>
+							<td>Select some text (typically with the mouse), then click on 
+							the tall button between the text and the annotations in the margin.
+							This will create a new annotation box on the right;  type in text and 
+							click elsewhere or type <kbd>Enter</kbd> when you're done.  Note that 
+							the selection can start in one paragraph and end in another, contain 
+							part of an HTML heading, etc.</td>
+						</tr>
+						<tr>
+							<td>Editing a note</td>
+							<td>Click on the note in the margin.  It will turn into an
+							edit box.  Make your changes, then click elsewhere or type 
+							<kbd>Enter</kbd> to save them.</td>
+						</tr>
+						<tr>
+							<td>Deleting an annotation</td>
+							<td>Click on the <kbd>x</kbd> icon to the right of the note in
+							the margin.  The note and the associated highlight will be removed.</td>
+						</tr>
+						<tr>
+							<td>Make an annotation private</td>
+							<td>The strange icon to the left of the <kbd>x</kbd> indicates whether the
+							annotation is public or private.  For this demo, that makes no difference,
+							but in a discussion forum (e.g. in Moodle), this can allow you to
+							selectively share your annotations.</td>
+						</tr>
+					</tbody>
+				</table>
+				
+			</div>
+			
+			<p class="metadata">
+				<a rel="bookmark" href="http://localhost:8080/#m2">#</a>
+				Last Updated <abbr class="published" title="2005-07-21T19:00-08:00">21 July 2005</abbr>
+				by <span class="author">Geof Glass</span>
+			</p>
+			
+			<div class="notes">
+				<button class="createAnnotation" onclick="createAnnotation('m2',true)" title="Click here to create an annotation">&gt;</button>
+				<ol>
+					<li></li>
+				</ol>
+			</div>
+		</li>
+		
+		<li id="m3" class="hentry">
+			<h3 class="entry-title">For Developers</h3>
+			<div class="entry-content">
+				<p>Please view the HTML source for this page to see how simple it is to add annotation
+				support to a page or application.  Comments in the HTML describe what Javascript and
+				CSS classes are required to make this work.  For further instructions, download the
+				stand-alone source code.</p>
+			</div>
+			
+			<p class="metadata">
+				<a rel="bookmark" href="http://localhost:8080/#m3">#</a>
+				Last Updated <abbr class="published" title="2005-08-24T11:50-08:00">24 August 2005</abbr>
+				by <span class="author">Geof Glass</span>
+			</p>
+			
+			<div class="notes">
+				<button class="createAnnotation" onclick="createAnnotation('m3',true)" title="Click here to create an annotation">&gt;</button>
+				<ol>
+					<li></li>
+				</ol>
+			</div>
+		</li>
+	</ol>
+	
+<div id="sidebar">
+	<!-- leave this empty for the time being -->
+</div>
+
+</body>
+</html>
+
