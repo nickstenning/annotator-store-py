@@ -39,7 +39,7 @@ class TestMapper:
         out = annotater.map.match('/annotation/')
         assert out['id'] == None
 
-    def test_match_delete(self):
+    def test_match_edit(self):
         annotater.map.environ = { 'REQUEST_METHOD' : 'GET' }
         out = annotater.map.match('/annotation/edit/1')
         assert out['action'] == 'edit'
@@ -79,24 +79,11 @@ class TestMapper:
         exp = '/annotation/edit/1'
         assert offset == exp
 
-class TestStatic:
-    
-    def test__make_annotate_form(self):
-        app = annotater.AnnotaterApp()
-        defaults = { 'url' : 'http://www.blackandwhite.com' }
-        out = app._make_annotate_form(form_name='formname', action_url='.',
-                form_defaults=defaults)
-        exp1 = '<label for="url">url:</label><input name="url" id="url" \
-value="%s" /><br />' % defaults['url']
-        assert exp1 in out
 
-
-class TestWsgi:
-
-    # disabled = True
+class TestAnnotaterDemo:
 
     def setup_method(self, name=''):
-        wsgi_app = annotater.AnnotaterApp()
+        wsgi_app = annotater.AnnotaterDemo()
         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
         self.outp = StringIO()
         twill.set_output(self.outp)
@@ -108,13 +95,6 @@ class TestWsgi:
 
     def test_js(self):
         filename = 'domutil.js'
-        url = self.siteurl + '_js/' + filename
-        web.go(url)
-        web.code(200)
-        web.find('ELEMENT_NODE = 1;')
-
-    def test_js_2(self):
-        filename = 'domutil.js'
         url = self.siteurl + filename
         web.go(url)
         web.code(200)
@@ -124,6 +104,32 @@ class TestWsgi:
         web.go(self.siteurl)
         web.code(200)
         web.find('This is a demonstration of')
+
+
+class TestStatic:
+    
+    def test__make_annotate_form(self):
+        app = annotater.AnnotaterStore()
+        defaults = { 'url' : 'http://www.blackandwhite.com' }
+        out = app._make_annotate_form(form_name='formname', action_url='.',
+                form_defaults=defaults)
+        exp1 = '<label for="url">url:</label><input name="url" id="url" \
+value="%s" /><br />' % defaults['url']
+        assert exp1 in out
+
+
+class TestAnnotaterStore:
+
+    def setup_method(self, name=''):
+        wsgi_app = annotater.AnnotaterStore()
+        twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
+        self.outp = StringIO()
+        twill.set_output(self.outp)
+        self.siteurl = 'http://localhost:8080/'
+
+    def teardown_method(self, name=''):
+        # remove intercept.
+        twill.remove_wsgi_intercept('localhost', 8080)
 
     def test_annotate_get(self):
         anno = self._create_annotation()
@@ -169,8 +175,8 @@ class TestWsgi:
     def test_annotate_delete(self):
         anno = self._create_annotation()
         offset = annotater.map.generate(controller='annotation', action='delete',
-                id=anno.id)
-        url = self.siteurl + offset[1:]
+                method='GET', id=anno.id)
+        url = self.siteurl + offset[1:] + '?blah='
         web.go(url)
         web.code(204)
         tmp = model.Annotation.select(model.Annotation.q.id == anno.id)
