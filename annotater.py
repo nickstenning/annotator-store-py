@@ -11,7 +11,6 @@ TODO:
 """
 import os
 
-import wsgiref.simple_server
 import paste.request
 
 from routes import *
@@ -29,7 +28,7 @@ map.connect('annotation/delete/:id', controller='annotation', action='delete',
 map.connect('annotation/edit/:id', controller='annotation', action='edit',
         conditions=dict(method=['GET']))
 
-map.resource('annotation')
+map.resource('annotation', 'annotation')
 
 # map.resource assumes PUT for update but marginalias uses POST
 # the exact mappings for REST seems a hotly contested matter see e.g.
