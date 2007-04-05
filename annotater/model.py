@@ -4,10 +4,17 @@ import cgi
 
 import sqlobject
 
-cwd = os.getcwd()
-uri = 'sqlite://%s/sqlite.db' % cwd
-# uri = 'sqlite:///:memory:'
-__connection__ = sqlobject.connectionForURI(uri)
+def set_default_connection():
+    cwd = os.getcwd()
+    uri = 'sqlite://%s/sqlite.db' % cwd
+    # uri = 'sqlite:///:memory:'
+    connection = sqlobject.connectionForURI(uri)
+    sqlobject.sqlhub.processConnection = connection
+    createdb()
+
+# must not set this here as annotater and its model will be reused in other
+# applications that will set up there own database connections
+# set_default_connection()
 
 # note we run this at bottom of module to auto create db tables on import
 def createdb():
@@ -85,4 +92,3 @@ class AnnotationSchema(sqlschema.SQLSchema):
 
     wrap = Annotation
 
-createdb()

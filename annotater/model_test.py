@@ -1,4 +1,5 @@
 import annotater.model
+annotater.model.set_default_connection()
 annotater.model.rebuilddb()
 
 class TestAnnotation:

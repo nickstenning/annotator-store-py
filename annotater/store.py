@@ -5,68 +5,76 @@ TODO:
 1. Move to templates for annotater store forms (?)
 """
 import os
+import logging
 
 import paste.request
 
 from routes import *
 
 # annotater stuff
-import model
-
-# absolute url to annotation service
-# this should go
-service_path = '/annotation'
-
-map = Mapper()
-map.connect('annotation/delete/:id', controller='annotation', action='delete',
-        conditions=dict(method=['GET']))
-map.connect('annotation/edit/:id', controller='annotation', action='edit',
-        conditions=dict(method=['GET']))
-
-map.resource('annotation', 'annotation')
-
-# map.resource assumes PUT for update but marginalias uses POST
-# the exact mappings for REST seems a hotly contested matter see e.g.
-# http://www.megginson.com/blogs/quoderat/archives/2005/04/03/post-in-rest-create-update-or-action/
-# must have this *after* map.resource as otherwise overrides the create action
-map.connect('annotation/:id', controller='annotation', action='update',
-    conditions=dict(method=['POST']))
-
-# misc config
-marginalia_path = os.path.abspath('./marginalia')
-html_doc_path = os.path.join(marginalia_path, 'index.html')
-
-
-import logging
-def setup_logging():
-    level = logging.DEBUG
-    logger = logging.getLogger('annotater')
-    logger.setLevel(level)
-    log_file_path = 'debug.log'
-    fh = logging.FileHandler(log_file_path, 'w')
-    fh.setLevel(level)
-    logger.addHandler(fh)
-    logger.info('START LOGGING')
-    return logger
-
-logger = setup_logging()
+import annotater.model
 
 
 class AnnotaterStore(object):
-    "Application to provide 'annotation' controller (see map above)."
+    "Application to provide 'annotation' store."
 
     DEBUG = True
 
+    def __init__(self, service_path='annotation'):
+        """Create the WSGI application.
+
+        @param service_path: offset url where this application is mounted.
+            Should be specified without leading or trailing '/'.
+        """
+        self.service_path = service_path
+        self.logger = self.setup_logging()
+
+    def get_routes_mapper(self):
+        # some extra additions to standard layout from map.resource
+        # help to make the url layout a bit nicer for those using the web ui
+        map = Mapper()
+        map.connect(self.service_path + '/delete/:id',
+                controller='annotation',
+                action='delete',
+                conditions=dict(method=['GET']))
+        map.connect(self.service_path + '/edit/:id',
+                controller='annotation',
+                action='edit',
+                conditions=dict(method=['GET']))
+
+        map.resource(self.service_path, self.service_path)
+
+        # map.resource assumes PUT for update but marginalias uses POST the
+        # exact mappings for REST seems a hotly contested matter see e.g.
+        # http://www.megginson.com/blogs/quoderat/archives/2005/04/03/post-in-rest-create-update-or-action/
+        # must have this *after* map.resource as otherwise overrides the create
+        # action
+        map.connect(self.service_path + '/:id',
+                controller='annotation',
+                action='update',
+                conditions=dict(method=['POST']))
+        return map
+
+    def setup_logging(self):
+        level = logging.DEBUG
+        logger = logging.getLogger('annotater')
+        logger.setLevel(level)
+        log_file_path = 'annotater-debug.log'
+        fh = logging.FileHandler(log_file_path, 'w')
+        fh.setLevel(level)
+        logger.addHandler(fh)
+        logger.info('START LOGGING')
+        return logger
+
     def __call__(self, environ, start_response):
         self.environ = environ
-        self.map = map
+        self.map = self.get_routes_mapper()
         self.map.environ = environ
         self.start_response = start_response
         self.path = environ['PATH_INFO']
         self.mapdict = self.map.match(self.path)
-        self.logger = logger
         action = self.mapdict['action']
-        self.anno_schema = model.AnnotationSchema()
+        self.anno_schema = annotater.model.AnnotationSchema()
         if action != 'delete':
             self.query_vals = paste.request.parse_formvars(self.environ)
         else: 
@@ -134,7 +142,7 @@ class AnnotaterStore(object):
         response_headers = [ ('Content-type', 'text/html') ]
         result = ''
         if format == 'html':
-            result = model.Annotation.list_annotations_html()
+            result = annotater.model.Annotation.list_annotations_html()
             result = \
 '''<html>
 <head>
@@ -146,7 +154,7 @@ class AnnotaterStore(object):
 </html>''' % (result)
         elif format == 'atom':
             response_headers = [ ('Content-type', 'application/xml') ]
-            result = model.Annotation.list_annotations_atom()
+            result = annotater.model.Annotation.list_annotations_atom()
         else:
             status = '500 Internal server error'
             result = 'Unknown format: %s' % format
@@ -178,7 +186,7 @@ class AnnotaterStore(object):
         url = self.query_vals.get('url')
         range = self.query_vals.get('range', 'NO RANGE')
         note = self.query_vals.get('note', 'NO NOTE')
-        anno = model.Annotation(
+        anno = annotater.model.Annotation(
                 url=url,
                 range=range,
                 note=note)
@@ -203,7 +211,7 @@ class AnnotaterStore(object):
             self.start_response(status, response_headers)
             msg = '<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
             return [msg]
-        anno = model.Annotation.get(id)
+        anno = annotater.model.Annotation.get(id)
         posturl = self.map.generate(controller='annotation',
                 action='update', id=anno.id, method='POST')
         print 'Post url:', posturl
@@ -237,7 +245,7 @@ class AnnotaterStore(object):
             # as comes from js need to add in the existing values for to_python
             # this is a bit of a hack but it the easiest way i can think of to
             # merge the values
-            current = model.Annotation.get(id)
+            current = annotater.model.Annotation.get(id)
             current_defaults = self.anno_schema.from_python(current)
             for key in current_defaults.keys():
                 if not new_values.has_key(key):
@@ -262,7 +270,7 @@ class AnnotaterStore(object):
             status = '204 Deleted'
             try:
                 id = int(id)
-                model.Annotation.delete(id)
+                annotater.model.Annotation.delete(id)
                 self.start_response(status, response_headers)
                 return []
             except:
