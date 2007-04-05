@@ -33,14 +33,15 @@ class TestMarginaliaFiles:
 
     def test_js(self):
         filename = 'domutil.js'
-        url = self.siteurl + self.base_url + filename
+        url = self.siteurl + self.base_url + '/' + filename
+        print url
         web.go(url)
         web.code(200)
         web.find('ELEMENT_NODE = 1;')
 
     def test_js_2(self):
         filename = 'lang/en.js'
-        url = self.siteurl + self.base_url + filename
+        url = self.siteurl + self.base_url + '/' + filename
         web.go(url)
         web.code(200)
 

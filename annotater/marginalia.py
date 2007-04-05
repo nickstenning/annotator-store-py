@@ -48,7 +48,8 @@ class MarginaliaMedia(object):
 
     def __call__(self, environ, start_response):
         path_info = environ['PATH_INFO']
-        filename = path_info[len(self.mount_path):]
+        filename = path_info[len(self.mount_path) + 1:]
+        print filename
         if filename.endswith('.js') or filename.endswith('.css'):
             status = '200 OK'
             if filename.endswith('.js'): filetype = 'text/javascript'
