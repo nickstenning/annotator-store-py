@@ -7,109 +7,83 @@ from StringIO import StringIO
 import twill
 from twill import commands as web
 
-import annotater
-import model
+import annotater.store
+import annotater.model
 
 class TestMapper:
 
     def test_match_new(self):
-        annotater.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = annotater.map.match('/annotation/new')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'GET' }
+        out = annotater.store.map.match('/annotation/new')
         assert out['action'] == 'new'
 
     def test_match_index(self):
-        annotater.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = annotater.map.match('/annotation')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'GET' }
+        out = annotater.store.map.match('/annotation')
         assert out['action'] == 'index'
 
     def test_match_create(self):
-        annotater.map.environ = { 'REQUEST_METHOD' : 'POST' }
-        out = annotater.map.match('/annotation')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'POST' }
+        out = annotater.store.map.match('/annotation')
         assert out['action'] == 'create'
 
     def test_match_delete(self):
-        annotater.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = annotater.map.match('/annotation/delete/1')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'GET' }
+        out = annotater.store.map.match('/annotation/delete/1')
         assert out['action'] == 'delete'
         assert out['id'] == '1'
-        annotater.map.environ = { 'REQUEST_METHOD' : 'DELETE' }
-        out = annotater.map.match('/annotation/1')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'DELETE' }
+        out = annotater.store.map.match('/annotation/1')
         assert out['action'] == 'delete'
         assert out['id'] == '1'
-        out = annotater.map.match('/annotation/')
+        out = annotater.store.map.match('/annotation/')
         assert out['id'] == None
 
     def test_match_edit(self):
-        annotater.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = annotater.map.match('/annotation/edit/1')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'GET' }
+        out = annotater.store.map.match('/annotation/edit/1')
         assert out['action'] == 'edit'
         assert out['id'] == '1'
-        annotater.map.environ = { 'REQUEST_METHOD' : 'PUT' }
-        out = annotater.map.match('/annotation/1')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'PUT' }
+        out = annotater.store.map.match('/annotation/1')
         assert out['action'] == 'update'
         assert out['id'] == '1'
-        annotater.map.environ = { 'REQUEST_METHOD' : 'POST' }
-        out = annotater.map.match('/annotation/1')
+        annotater.store.map.environ = { 'REQUEST_METHOD' : 'POST' }
+        out = annotater.store.map.match('/annotation/1')
         assert out['action'] == 'update'
 
     def test_url_for_new(self):
-        offset = annotater.map.generate(controller='annotation', action='new')
+        offset = annotater.store.map.generate(controller='annotation', action='new')
         exp = '/annotation/new'
         assert offset == exp
 
     def test_url_for_create(self):
-        offset = annotater.map.generate(controller='annotation', action='create',
+        offset = annotater.store.map.generate(controller='annotation', action='create',
                 method='POST' )
         exp = '/annotation'
         assert offset == exp
 
     def test_url_for_delete(self):
-        offset = annotater.map.generate(controller='annotation',
+        offset = annotater.store.map.generate(controller='annotation',
                 action='delete', id=1, method='GET' )
         exp = '/annotation/delete/1'
         assert offset == exp
-        offset = annotater.map.generate(controller='annotation',
+        offset = annotater.store.map.generate(controller='annotation',
                 action='delete', id=1, method='DELETE' )
         exp = '/annotation/1'
         assert offset == exp
 
     def test_url_for_edit(self):
-        offset = annotater.map.generate(controller='annotation',
+        offset = annotater.store.map.generate(controller='annotation',
                 action='edit', id=1, method='GET')
         exp = '/annotation/edit/1'
         assert offset == exp
 
 
-class TestAnnotaterDemo:
-
-    def setup_method(self, name=''):
-        wsgi_app = annotater.AnnotaterDemo()
-        twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
-        self.outp = StringIO()
-        twill.set_output(self.outp)
-        self.siteurl = 'http://localhost:8080/'
-
-    def teardown_method(self, name=''):
-        # remove intercept.
-        twill.remove_wsgi_intercept('localhost', 8080)
-
-    def test_js(self):
-        filename = 'domutil.js'
-        url = self.siteurl + filename
-        web.go(url)
-        web.code(200)
-        web.find('ELEMENT_NODE = 1;')
-
-    def test_show_root(self):
-        web.go(self.siteurl)
-        web.code(200)
-        web.find('This is a demonstration of')
-
-
 class TestStatic:
     
     def test__make_annotate_form(self):
-        app = annotater.AnnotaterStore()
+        app = annotater.store.AnnotaterStore()
         defaults = { 'url' : 'http://www.blackandwhite.com' }
         out = app._make_annotate_form(form_name='formname', action_url='.',
                 form_defaults=defaults)
@@ -121,7 +95,7 @@ value="%s" /><br />' % defaults['url']
 class TestAnnotaterStore:
 
     def setup_method(self, name=''):
-        wsgi_app = annotater.AnnotaterStore()
+        wsgi_app = annotater.store.AnnotaterStore()
         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
         self.outp = StringIO()
         twill.set_output(self.outp)
@@ -133,7 +107,7 @@ class TestAnnotaterStore:
 
     def test_annotate_get(self):
         anno = self._create_annotation()
-        offset = annotater.map.generate(controller='annotation', action='index')
+        offset = annotater.store.map.generate(controller='annotation', action='index')
         url = self.siteurl + offset[1:]
         web.go(url)
         web.code(200)
@@ -142,7 +116,7 @@ class TestAnnotaterStore:
 
     def test_annotate_get_atom(self):
         anno = self._create_annotation()
-        offset = annotater.map.generate(controller='annotation', action='index')
+        offset = annotater.store.map.generate(controller='annotation', action='index')
         url = self.siteurl + offset[1:] + '?format=atom'
         web.go(url)
         web.code(200)
@@ -154,9 +128,8 @@ class TestAnnotaterStore:
 
     def test_annotate_new(self):
         # exercises both create and new
-        import model
-        model.rebuilddb()
-        offset = annotater.map.generate(controller='annotation', action='new',
+        annotater.model.rebuilddb()
+        offset = annotater.store.map.generate(controller='annotation', action='new',
                 method='GET')
         url = self.siteurl + offset[1:]
         web.go(url)
@@ -167,24 +140,24 @@ class TestAnnotaterStore:
         web.submit()
         web.code(201)
         # TODO make this test more selective
-        items = model.Annotation.select()
+        items = annotater.model.Annotation.select()
         items = list(items)
         assert len(items) == 1
         assert items[0].note == note
 
     def test_annotate_delete(self):
         anno = self._create_annotation()
-        offset = annotater.map.generate(controller='annotation', action='delete',
+        offset = annotater.store.map.generate(controller='annotation', action='delete',
                 method='GET', id=anno.id)
         url = self.siteurl + offset[1:] + '?blah='
         web.go(url)
         web.code(204)
-        tmp = model.Annotation.select(model.Annotation.q.id == anno.id)
+        tmp = annotater.model.Annotation.select(annotater.model.Annotation.q.id == anno.id)
         num = len(list(tmp))
         assert num == 0
     
     def _create_annotation(self):
-        anno = model.Annotation(
+        anno = annotater.model.Annotation(
                 url='http://xyz.com',
                 range='1.0 2.0',
                 note='blah note',
@@ -193,7 +166,7 @@ class TestAnnotaterStore:
 
     def test_annotate_edit(self):
         anno = self._create_annotation()
-        offset = annotater.map.generate(controller='annotation', action='edit',
+        offset = annotater.store.map.generate(controller='annotation', action='edit',
                 id=anno.id, method='GET')
         url = self.siteurl + offset[1:]
         web.go(url)
@@ -205,13 +178,13 @@ class TestAnnotaterStore:
         assert anno.note == newnote
     
     def test_not_found(self):
-        offset = annotater.map.generate(controller='annotation')
+        offset = annotater.store.map.generate(controller='annotation')
         url = self.siteurl + offset[1:] + '/blah'
         web.go(url)
         web.code(404)
 
     def test_bad_request(self):
-        offset = annotater.map.generate(controller='annotation', action='edit',
+        offset = annotater.store.map.generate(controller='annotation', action='edit',
                 method='GET')
         url = self.siteurl + offset[1:]
         web.go(url)
