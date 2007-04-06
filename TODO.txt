@@ -1,5 +1,7 @@
 ## TODO
 
+p:marginalia 2007-04-06 make annotation offset configurable rather than being fixed as 'anotation' (set in config.js). Should be able to do this by just modifying rest-annotate.AnnotationService ctor to take an extra argument and then doing a find replace on ANNOTATION_SERVICE_URL
+
 p:store/interface 2006-12-10 Adapt implementation to allow multiple ways of adding annotations (e.g. similar to commentonpower.org stuff)
  
 p:store 2006-12-10 security (authentication etc)

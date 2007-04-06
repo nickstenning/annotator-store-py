@@ -1,12 +1,18 @@
 import os
 
-def get_media_header(media_url_base, app_url):
-    """Get all html head needed for marginalia.
-    @param media_url:
+def get_media_header(media_url_base, annotation_store_fqdn):
+    """Get html head section including all media links needed for marginalia.
+
+    @param media_url_base: base url for all the links to media files.
+    @param annotation_store_fqdn: fully qualified domain name (e.g.
+        http://sub.domain.com/) for the annotation store app. Because of
+        hard-coding in the marginalia js libraries offset url from the FQDN
+        for annotation store then must be '/annotation', i.e. store must reside
+        at http://fqdn/annotation/.
     """
     values = {
             'media_url' : media_url_base,
-            'app_url'   : app_url
+            'app_url'   : annotation_store_fqdn
             }
     html_header = \
 '''

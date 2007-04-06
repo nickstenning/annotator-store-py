@@ -7,7 +7,9 @@ annotater.model.set_default_connection()
 import annotater.store
 import annotater.marginalia
 
-# absolute url to annotation service
+# Offset url to annotation store 
+# Because of hard-coding in the marginalia js libraries this *must* be set to
+# '/annotation'
 service_path = '/annotation'
 
 # misc config
