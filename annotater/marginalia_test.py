@@ -22,8 +22,10 @@ class TestMarginaliaFiles:
 
     def setup_method(self, name=''):
         marginalia_path = os.path.abspath('./marginalia')
+        # set without trailing slash
         self.base_url = '/marginalia'
         wsgi_app = annotater.marginalia.MarginaliaMedia(marginalia_path, self.base_url)
+        self.base_url = '/marginalia' + '/'
         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
         twill.set_output(StringIO())
         self.siteurl = 'http://localhost:8080'
@@ -33,7 +35,7 @@ class TestMarginaliaFiles:
 
     def test_js(self):
         filename = 'domutil.js'
-        url = self.siteurl + self.base_url + '/' + filename
+        url = self.siteurl + self.base_url + filename
         print url
         web.go(url)
         web.code(200)
@@ -41,7 +43,18 @@ class TestMarginaliaFiles:
 
     def test_js_2(self):
         filename = 'lang/en.js'
-        url = self.siteurl + self.base_url + '/' + filename
+        url = self.siteurl + self.base_url + filename
         web.go(url)
         web.code(200)
+
+class TestMarginaliaFiles2(TestMarginaliaFiles):
+    # a different base name
+
+    def setup_method(self, name=''):
+        marginalia_path = os.path.abspath('./marginalia')
+        self.base_url = '/'
+        wsgi_app = annotater.marginalia.MarginaliaMedia(marginalia_path, self.base_url)
+        twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
+        twill.set_output(StringIO())
+        self.siteurl = 'http://localhost:8080'
 

@@ -40,16 +40,14 @@ class MarginaliaMedia(object):
         @param mount_path: url path at which this app is mounted e.g. /marginalia
         """
         self.media_path = media_path
-        if mount_path.endswith('/'):
-            mount_path = mount_path[:-1]
-        if not mount_path.startswith('/'):
-            mount_path = '/' + mount_path
+        # add the trailing slash
+        if not mount_path.endswith('/'):
+            mount_path = mount_path + '/'
         self.mount_path = mount_path
 
     def __call__(self, environ, start_response):
         path_info = environ['PATH_INFO']
-        filename = path_info[len(self.mount_path) + 1:]
-        print filename
+        filename = path_info[len(self.mount_path):]
         if filename.endswith('.js') or filename.endswith('.css'):
             status = '200 OK'
             if filename.endswith('.js'): filetype = 'text/javascript'
