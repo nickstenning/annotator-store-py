@@ -12,6 +12,10 @@ p:wsgi 2007-04-04 create wsgi middleware that automatically adds annotation supp
 
 p:marginalia 2007-04-04 remove smartCopy stuff
 
+x 2007-04-05 p:package 2007-04-04 Make annotater easily incorporable in other projects and encapsulate marginalia stuff
+
+x 2007-04-06 p:package 2007-04-04 Make annotater into a proper python package (setup.py etc)
+
 x 2006-12-24 p:store full annotation object in db ONE 2006-12-24 (sort of -- need to do userid etc)
 
 x 2006-12-24 (atom) p:store support returning different formats (atom, rss etc)
