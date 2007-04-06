@@ -8,13 +8,12 @@ import annotater.store
 import annotater.marginalia
 
 # absolute url to annotation service
-# this should go
 service_path = '/annotation'
 
 # misc config
 marginalia_path = os.path.abspath('./marginalia')
-html_doc_path = os.path.join(marginalia_path, 'index.html')
-
+this_directory = os.path.dirname(__file__)
+html_doc_path = os.path.join(this_directory, 'index.html')
 
 import logging
 def setup_logging():
