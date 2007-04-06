@@ -21,7 +21,7 @@ class TestGetMediaHeader:
 class TestMarginaliaFiles:
 
     def setup_method(self, name=''):
-        marginalia_path = os.path.abspath('./marginalia')
+        marginalia_path = os.path.dirname(__file__)
         # set without trailing slash
         self.base_url = '/marginalia'
         wsgi_app = annotater.marginalia.MarginaliaMedia(marginalia_path, self.base_url)
@@ -51,7 +51,7 @@ class TestMarginaliaFiles2(TestMarginaliaFiles):
     # a different base name
 
     def setup_method(self, name=''):
-        marginalia_path = os.path.abspath('./marginalia')
+        marginalia_path = os.path.dirname(__file__)
         self.base_url = '/'
         wsgi_app = annotater.marginalia.MarginaliaMedia(marginalia_path, self.base_url)
         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)

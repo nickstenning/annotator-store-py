@@ -11,8 +11,10 @@ import annotater.marginalia
 service_path = '/annotation'
 
 # misc config
-marginalia_path = os.path.abspath('./marginalia')
 this_directory = os.path.dirname(__file__)
+marginalia_path = os.path.abspath(
+        os.path.join(this_directory, '../annotater/marginalia')
+        )
 html_doc_path = os.path.join(this_directory, 'index.html')
 
 import logging
