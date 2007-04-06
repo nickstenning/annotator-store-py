@@ -1,0 +1,42 @@
+## TODO
+
+p:store/interface 2006-12-10 Adapt implementation to allow multiple ways of adding annotations (e.g. similar to commentonpower.org stuff)
+ 
+p:store 2006-12-10 security (authentication etc)
+
+p:marginalia/ui 2007-04-04 add/hide annotations button
+
+p:marginalia 2007-04-04 get rid of onload on body element by using a 'generic' function approach a la asciimathml (following www.brothercake.com). Benefit = easier to layer annotater on top of original system
+
+p:wsgi 2007-04-04 create wsgi middleware that automatically adds annotation support (a la Bicking's commentary)
+
+p:marginalia 2007-04-04 remove smartCopy stuff
+
+x 2006-12-24 p:store full annotation object in db ONE 2006-12-24 (sort of -- need to do userid etc)
+
+x 2006-12-24 (atom) p:store support returning different formats (atom, rss etc)
+
+x 2006-12-20 p:marginalia rest-annotate.js adapt PUT to put content in body DONE
+
+x 2006-12-20 p:marginalia check getting back content DONE
+
+
+## General Thoughts
+
+1. Addressing text
+  * xpointer
+  * element id + offset (character or word ...?)
+
+2. Web interface
+  * javascript vs. non-javascript
+
+3. Annotation/comment storage
+  * local vs. non-local
+
+4. Annotation store backend
+  * marginalia:
+    - php version
+    - python version
+  * others ...
+
+5. distributed annotation (julian's email)
