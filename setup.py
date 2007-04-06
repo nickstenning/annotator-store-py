@@ -2,10 +2,17 @@ from setuptools import setup, find_packages
 
 from annotater import __version__
 
+
 setup(
     name = 'annotater',
     version = __version__,
     packages = find_packages(),
+    # WARNING: package_data is broken for sdist
+    # see
+    # http://mail.python.org/pipermail/distutils-sig/2007-February/007216.html
+    # package_data = {
+    #    'annotater.marginalia' : ['*.js', '*.css', 'lang/*' ],
+    #    },
     install_requires = [ 'SQLObject >= 0.7' ],
     scripts = [],
 
