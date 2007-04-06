@@ -34,20 +34,26 @@ class MarginaliaMedia(object):
     marginalia javascript annotation to work.
     """
 
-    def __init__(self, media_path, mount_path):
+    def __init__(self, mount_path):
         """
-        @param media_path: path on disk to marginalia media files directory.
         @param mount_path: url path at which this app is mounted e.g. /marginalia
         """
-        self.media_path = media_path
-        # add the trailing slash
-        if not mount_path.endswith('/'):
-            mount_path = mount_path + '/'
         self.mount_path = mount_path
+        # remove the trailing slash
+        if self.mount_path.endswith('/'):
+            self.mount_path = self.mount_path[:-1]
+        import paste.urlparser
+        self.fileserver_app = paste.urlparser.make_pkg_resources(
+                {},
+                'annotater',
+                'annotater/marginalia'
+                )
 
     def __call__(self, environ, start_response):
         path_info = environ['PATH_INFO']
         filename = path_info[len(self.mount_path):]
+        environ['PATH_INFO'] = filename
+        return self.fileserver_app(environ, start_response)
         if filename.endswith('.js') or filename.endswith('.css'):
             status = '200 OK'
             if filename.endswith('.js'): filetype = 'text/javascript'

@@ -12,9 +12,6 @@ service_path = '/annotation'
 
 # misc config
 this_directory = os.path.dirname(__file__)
-marginalia_path = os.path.abspath(
-        os.path.join(this_directory, '../annotater/marginalia')
-        )
 html_doc_path = os.path.join(this_directory, 'index.html')
 
 import logging
@@ -35,20 +32,12 @@ class AnnotaterDemo(object):
 
     def __call__(self, environ, start_response):
         self.store = annotater.store.AnnotaterStore()
-        self.media_app = annotater.marginalia.MarginaliaMedia(marginalia_path, '/')
+        self.media_app = annotater.marginalia.MarginaliaMedia('/')
         self.path = environ['PATH_INFO']
         if self.path.startswith('/debug'):
             return wsgiref.simple_server.demo_app(environ, start_response)
         elif self.path.endswith('.js') or self.path.endswith('.css'):
             return self.media_app(environ, start_response)
-#            status = '200 OK'
-#            if self.path.endswith('.js'): filetype = 'text/javascript'
-#            else: filetype = 'text/css'
-#            response_headers = [('Content-type', filetype)]
-#            start_response(status, response_headers)
-#            jspath = os.path.join(marginalia_path, self.path[1:])
-#            jsfile = file(jspath).read()
-#            return [jsfile]
         elif self.path.startswith(service_path):
             return self.store(environ, start_response)
         else:

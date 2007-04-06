@@ -21,10 +21,9 @@ class TestGetMediaHeader:
 class TestMarginaliaFiles:
 
     def setup_method(self, name=''):
-        marginalia_path = os.path.dirname(__file__)
         # set without trailing slash
         self.base_url = '/marginalia'
-        wsgi_app = annotater.marginalia.MarginaliaMedia(marginalia_path, self.base_url)
+        wsgi_app = annotater.marginalia.MarginaliaMedia(self.base_url)
         self.base_url = '/marginalia' + '/'
         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
         twill.set_output(StringIO())
@@ -47,13 +46,13 @@ class TestMarginaliaFiles:
         web.go(url)
         web.code(200)
 
+
 class TestMarginaliaFiles2(TestMarginaliaFiles):
     # a different base name
 
     def setup_method(self, name=''):
-        marginalia_path = os.path.dirname(__file__)
         self.base_url = '/'
-        wsgi_app = annotater.marginalia.MarginaliaMedia(marginalia_path, self.base_url)
+        wsgi_app = annotater.marginalia.MarginaliaMedia(self.base_url)
         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
         twill.set_output(StringIO())
         self.siteurl = 'http://localhost:8080'
