@@ -16,6 +16,13 @@ class TestMapper:
     store = annotater.store.AnnotaterStore()
     map = store.get_routes_mapper()
 
+    def test_match_double_slash(self):
+        # demonstrate that double slashes mess things up!
+        self.map.environ = { 'REQUEST_METHOD' : 'GET' }
+        out = self.map.match('//annotation/')
+        assert out == None
+        # assert out['action'] == 'index'
+
     def test_match_new(self):
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
         out = self.map.match('/annotation/new')

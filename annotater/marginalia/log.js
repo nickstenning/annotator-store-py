@@ -15,7 +15,7 @@ function logError( s )
 			var logger = Components.classes["@mozilla.org/consoleservice;1"].getService(Components.interfaces.nsIConsoleService);
 			logger.logStringMessage( s  );
 			*/
-			dump( "ERROR: " + s + "\n" );
+			dump( "ERROR: " + s + "\n\n" );
 		}
 		var dumpElement = document.getElementById( 'debug' );
 		if ( INWINDOW_LOG && dumpElement )
@@ -40,7 +40,7 @@ function trace( topic, s )
 	if ( TRACING_ON && !topic || ( null != window.traceSettings && window.traceSettings[ topic ]) )
 	{
 		if ( window.dump )
-			dump( s + "\n");
+			dump( s + "\n\n");
 		var dumpElement = document.getElementById( 'debug' );
 		if ( INWINDOW_LOG && dumpElement )
 		{

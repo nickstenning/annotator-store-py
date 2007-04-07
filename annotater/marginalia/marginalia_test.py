@@ -11,11 +11,19 @@ class TestGetMediaHeader:
 
     def test_1(self):
         base_url = '/marginalia'
-        app_url = 'http://localhost:5000/blah.html'
+        app_url = 'http://localhost:5000'
         out = annotater.marginalia.get_media_header(base_url, app_url)
         assert base_url in out
         assert app_url in out
         assert '<script type="text/javascript" src="' in out
+
+    def test_no_trailing_slash_on_app_url(self):
+        base_url = '/marginalia'
+        # note trailing slash
+        app_url = 'http://localhost:5000/'
+        out = annotater.marginalia.get_media_header(base_url, app_url)
+        assert app_url not in out
+        assert app_url[:-1] in out
 
 
 class TestMarginaliaFiles:

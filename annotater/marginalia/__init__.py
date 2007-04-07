@@ -10,6 +10,8 @@ def get_media_header(media_url_base, annotation_store_fqdn):
         for annotation store then must be '/annotation', i.e. store must reside
         at http://fqdn/annotation/.
     """
+    if annotation_store_fqdn.endswith('/'):
+        annotation_store_fqdn = annotation_store_fqdn[:-1]
     values = {
             'media_url' : media_url_base,
             'app_url'   : annotation_store_fqdn
