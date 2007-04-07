@@ -51,13 +51,17 @@ hidden again with a call to hideAllAnnotations.  You may want to create a button
 control to do this (as in Moodle).  The URL here is the URL of this page, although this 
 depends on the back-end implementation. In Moodle, it is the URL of the forum page (or
 whatever).  Here, the * is a wildcard.  See the entrylink within each entry. -->
-<body onload='showAllAnnotations( "http://localhost:8080/#*")'>
+<body>
 	<h1>Web Annotation Demo</h1>
 
 	<!-- This is just used for debugging, don't worry about it: -->
 	<ul id="debug" style="display:none">
 		<li></li>
 	</ul>
+  <form>
+    <input type="button" onclick='showAllAnnotations( "http://localhost:8080/#*")' value="Show Annotations" /><br />
+    <input type="button" onclick='hideAllAnnotations( "http://localhost:8080/#*")' value="Hide Annotations" /><br />
+  </form>
 	
 	<!-- I'm using the article list for styling in the dom.  There's no need for it, and
 	no reason your list of entries should be an ol, or that your entries should be li
