@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+<head>
+	<!--
+  To see the original fully commented version of a file setup for annotation see index.html
+	-->
+	<title>Annotation Example</title>
+  <!-- marginalia media links etc -->
+  %(marginalia_media)s
+  <!-- /end -->
+</head>
+<body>
+	<h1>Web Annotation Demo</h1>
+
+	<!-- This is just used for debugging, don't worry about it: -->
+	<ul id="debug" style="display:none">
+		<li></li>
+	</ul>
+
+  <!-- show/hide annotation buttons -->
+  %(annotation_buttons)s
+	
+		<div id="m1" class="hentry">
+			<h3 class="entry-title">About This Demo</h3>
+			<div class="entry-content">
+				<h4>Annotation</h4>
+				
+				<table>
+					<thead>
+						<tr>
+							<th>Action</th>
+							<th>User Interface</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>Creating an annotation</td>
+							<td>Select some text (typically with the mouse), then click on 
+							the tall button between the text and the annotations in the margin.
+							This will create a new annotation box on the right;  type in text and 
+							click elsewhere or type <kbd>Enter</kbd> when you're done.  Note that 
+							the selection can start in one paragraph and end in another, contain 
+							part of an HTML heading, etc.</td>
+						</tr>
+						<tr>
+							<td>Editing a note</td>
+							<td>Click on the note in the margin.  It will turn into an
+							edit box.  Make your changes, then click elsewhere or type 
+							<kbd>Enter</kbd> to save them.</td>
+						</tr>
+						<tr>
+							<td>Deleting an annotation</td>
+							<td>Click on the <kbd>x</kbd> icon to the right of the note in
+							the margin.  The note and the associated highlight will be removed.</td>
+						</tr>
+						<tr>
+							<td>Make an annotation private</td>
+							<td>The strange icon to the left of the <kbd>x</kbd> indicates whether the
+							annotation is public or private.  For this demo, that makes no difference,
+							but in a discussion forum (e.g. in Moodle), this can allow you to
+							selectively share your annotations.</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			
+			<p>
+				<a rel="bookmark" href="%(page_uri)s#m1">#</a>
+				<span class="author">Geof Glass</span>
+			</p>
+			
+			<div class="notes">
+				<button class="createAnnotation" onclick="createAnnotation('m1',true)" title="Click here to create an annotation">&gt;</button>
+				<ol>
+					<li></li>
+				</ol>
+			</div>
+		</div>
+	
+</body>
+</html>
+

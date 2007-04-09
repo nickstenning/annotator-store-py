@@ -26,6 +26,14 @@ class TestGetMediaHeader:
         assert app_url[:-1] in out
 
 
+class TestGetButtons:
+
+    def test_1(self):
+        uri = 'http://demo.openshakespeare.org/view?name=blahblah'
+        out = annotater.marginalia.get_buttons(uri)
+        assert uri in out
+
+
 class TestMarginaliaFiles:
 
     def setup_method(self, name=''):

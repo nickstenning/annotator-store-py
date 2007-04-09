@@ -12,6 +12,9 @@ def get_media_header(media_url_base, annotation_store_fqdn):
     """
     if annotation_store_fqdn.endswith('/'):
         annotation_store_fqdn = annotation_store_fqdn[:-1]
+    # we re-add a trailing slash so strip if already there
+    if media_url_base.endswith('/'):
+        media_url_base = media_url_base[:-1]
     values = {
             'media_url' : media_url_base,
             'app_url'   : annotation_store_fqdn
@@ -35,6 +38,20 @@ def get_media_header(media_url_base, annotation_store_fqdn):
     </script>
 ''' % values
     return html_header
+
+
+def get_buttons(page_uri):
+    "Get Show/Hide Annotation buttons."
+    html = \
+'''
+  <form>
+    <!-- add #* so that all annotations are picked up -->
+    <input type="button" onclick='showAllAnnotations( "%(page_uri)s#*")' value="Show Annotations" /><br />
+    <input type="button" onclick='hideAllAnnotations( "%(page_uri)s#*")' value="Hide Annotations" /><br />
+  </form>
+'''
+    out = html % { 'page_uri' : page_uri }
+    return out
 
 
 class MarginaliaMedia(object):

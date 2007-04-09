@@ -29,5 +29,7 @@ class TestAnnotaterDemo:
     def test_show_root(self):
         web.go(self.siteurl)
         web.code(200)
-        web.find('This is a demonstration of')
+        web.title('Annotation Example')
+        web.find('Web Annotation Demo')
+        web.find('Show Annotations')
 

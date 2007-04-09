@@ -1,4 +1,5 @@
 import os
+import wsgiref.util
 
 import paste.request
 
@@ -14,14 +15,14 @@ service_path = '/annotation'
 
 # misc config
 this_directory = os.path.dirname(__file__)
-html_doc_path = os.path.join(this_directory, 'index.html')
+html_doc_path = os.path.join(this_directory, 'demo.html')
 
 import logging
 def setup_logging():
     level = logging.DEBUG
     logger = logging.getLogger('annotater')
     logger.setLevel(level)
-    log_file_path = 'debug.log'
+    log_file_path = 'annotater-debug.log'
     fh = logging.FileHandler(log_file_path, 'w')
     fh.setLevel(level)
     logger.addHandler(fh)
@@ -43,11 +44,24 @@ class AnnotaterDemo(object):
         elif self.path.startswith(service_path):
             return self.store(environ, start_response)
         else:
-            logger.info('Call to base url /')
+            logger.info('Call to %s' % self.path)
             status = '200 OK'
             response_headers = [('Content-type','text/html')]
             start_response(status, response_headers)
             out = file(html_doc_path).read()
+            media_mount_path = '/'
+            host = 'http://localhost:8080/'
+            media = annotater.marginalia.get_media_header(media_mount_path,
+                    host)
+            # use the uri as the identifier
+            uri = wsgiref.util.request_uri(environ)
+            buttons = annotater.marginalia.get_buttons(uri)
+            values = {
+                    'marginalia_media'   : media,
+                    'annotation_buttons' : buttons,
+                    'page_uri'           : uri,
+                    }
+            out = out % values
             return [out]
 
 
