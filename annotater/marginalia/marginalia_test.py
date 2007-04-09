@@ -38,6 +38,50 @@ class TestGetButtons:
         assert uri in out
 
 
+class TestFormatEntry:
+
+    starttext = unicode('''Blah \xc3\xa6
+blah &amp; blah''', 'utf-8')
+    exp = u'''
+    <div id="m2" class="hentry">
+        <h3 class="entry-title">Test Stuff</h3>
+        <div class="entry-content">
+            Blah \xe6
+blah &amp; blah
+        </div><!-- /entry-content -->
+        <p class="metadata">
+            <a rel="bookmark" href="http://demo.openshakespeare.org/#m2">#</a>
+            <span class="author">Nemo</span>
+        </p>
+        <div class="notes">
+            <button class="createAnnotation" onclick="createAnnotation('m2',true)" title="Click here to create an annotation">&gt;</button>
+            <ol>
+                <li></li>
+            </ol>
+        </div><!-- /notes -->
+    </div><!-- /hentry -->
+'''
+    
+    def test_format(self):
+        newtitle = 'Test Stuff'
+        page_url = 'http://demo.openshakespeare.org/'
+        out = annotater.marginalia.format_entry(
+                content=self.starttext,
+                page_uri=page_url,
+                title=newtitle,
+                id='m2',
+                author='Nemo',
+                )
+        exp = self.exp.encode('utf-8')
+        print '"%s"' % out.encode('utf-8')
+        print '"%s"' % exp
+        for count in range(len(out)):
+            end = max(count+5, len(out)) 
+            if out[count] != self.exp[count]:
+                print 'Error:', count, exp[count:count+5]
+        assert out == self.exp
+
+
 class TestMarginaliaFiles:
 
     def setup_method(self, name=''):

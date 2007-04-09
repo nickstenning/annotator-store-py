@@ -62,6 +62,47 @@ def get_buttons(page_uri):
     return out
 
 
+def format_entry(**kwargs):
+    """Create a marginalia 'entry', that is the basic annotatable unit.
+    @param kwargs:
+        content: the html content which is to become the annotatable item.
+        title: title for the annotation (if any).
+        page_uri: uri for this page (used with the id to create the id for the
+            annotation).
+        id: id for this annotation with the page
+        author: author of the annotation.
+    """
+    entry_template = u'''
+    <div id="%(id)s" class="hentry">
+        <h3 class="entry-title">%(title)s</h3>
+        <div class="entry-content">
+            %(content)s
+        </div><!-- /entry-content -->
+        <p class="metadata">
+            <a rel="bookmark" href="%(page_uri)s#%(id)s">#</a>
+            <span class="author">%(author)s</span>
+        </p>
+        <div class="notes">
+            <button class="createAnnotation" onclick="createAnnotation('%(id)s',true)" title="Click here to create an annotation">&gt;</button>
+            <ol>
+                <li></li>
+            </ol>
+        </div><!-- /notes -->
+    </div><!-- /hentry -->
+'''
+    values = {
+            'content' : '',
+            'title' : '',
+            'id' : 'm0',
+            'page_uri' : 'http://localhost:8080/',
+            'author' : '',
+            }
+    for key in kwargs:
+        values[key] = kwargs[key]
+    result = entry_template % values
+    return result
+
+
 class MarginaliaMedia(object):
     """WSGI App to make available the marginalia media files needed for
     marginalia javascript annotation to work.
