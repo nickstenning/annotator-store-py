@@ -20,9 +20,9 @@ All other code licensed under the MIT license:
 
 ## Getting Started
 
-You can start the demo web application in annotater.py by doing:
+You can start the demo web application:
 
-    $ python demo.py
+    $ python demo/demo.py
 
 You'll then find an annotable web page presented at <http://localhost:8080/>
 

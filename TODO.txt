@@ -1,18 +1,20 @@
 ## TODO
 
+p:marginalia/testing (A) automate the testing of the js interface using a tool such as selenium (this is *really* high priority -- testing by eye is just too time consuming)
+
 p:marginalia 2007-04-06 make annotation offset configurable rather than being fixed as 'anotation' (set in config.js). Should be able to do this by just modifying rest-annotate.AnnotationService ctor to take an extra argument and then doing a find replace on ANNOTATION_SERVICE_URL
 
 p:store/interface 2006-12-10 Adapt implementation to allow multiple ways of adding annotations (e.g. similar to commentonpower.org stuff)
  
 p:store 2006-12-10 security (authentication etc)
 
-p:marginalia/ui 2007-04-04 add/hide annotations button
-
-p:marginalia 2007-04-04 get rid of onload on body element by using a 'generic' function approach a la asciimathml (following www.brothercake.com). Benefit = easier to layer annotater on top of original system
-
 p:wsgi 2007-04-04 create wsgi middleware that automatically adds annotation support (a la Bicking's commentary)
 
 p:marginalia 2007-04-04 remove smartCopy stuff
+
+x 2007-04-09 p:marginalia/ui 2007-04-04 add/hide annotations button
+
+x 2007-04-09 p:marginalia 2007-04-04 get rid of onload on body element by using a 'generic' function approach a la asciimathml (following www.brothercake.com). Benefit = easier to layer annotater on top of original system
 
 x 2007-04-05 p:package 2007-04-04 Make annotater easily incorporable in other projects and encapsulate marginalia stuff
 

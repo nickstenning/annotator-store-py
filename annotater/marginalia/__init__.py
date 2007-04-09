@@ -1,6 +1,6 @@
 import os
 
-def get_media_header(media_url_base, annotation_store_fqdn):
+def get_media_header(media_url_base, annotation_store_fqdn, page_uri):
     """Get html head section including all media links needed for marginalia.
 
     @param media_url_base: base url for all the links to media files.
@@ -9,6 +9,7 @@ def get_media_header(media_url_base, annotation_store_fqdn):
         hard-coding in the marginalia js libraries offset url from the FQDN
         for annotation store then must be '/annotation', i.e. store must reside
         at http://fqdn/annotation/.
+    @param page_uri: uri for page you are annotating (used as page identifier)
     """
     if annotation_store_fqdn.endswith('/'):
         annotation_store_fqdn = annotation_store_fqdn[:-1]
@@ -17,7 +18,8 @@ def get_media_header(media_url_base, annotation_store_fqdn):
         media_url_base = media_url_base[:-1]
     values = {
             'media_url' : media_url_base,
-            'app_url'   : annotation_store_fqdn
+            'app_url'   : annotation_store_fqdn,
+            'page_uri'  : page_uri,
             }
     html_header = \
 '''
@@ -35,7 +37,13 @@ def get_media_header(media_url_base, annotation_store_fqdn):
     <script type="text/javascript">
       annotationInit( '%(app_url)s', 'anonymous', 'anonymous', null );
       smartcopyInit( );
+      function generic_onload()
+      {
+        showAllAnnotations( "%(page_uri)s#*" );
+      };
     </script>
+    <!-- must be called after generic_onload is defined -->
+    <script type="text/javascript" src="%(media_url)s/onload.js"></script>
 ''' % values
     return html_header
 

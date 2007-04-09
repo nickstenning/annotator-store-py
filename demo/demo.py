@@ -51,10 +51,11 @@ class AnnotaterDemo(object):
             out = file(html_doc_path).read()
             media_mount_path = '/'
             host = 'http://localhost:8080/'
-            media = annotater.marginalia.get_media_header(media_mount_path,
-                    host)
             # use the uri as the identifier
             uri = wsgiref.util.request_uri(environ)
+            media = annotater.marginalia.get_media_header(media_mount_path,
+                    host,
+                    uri)
             buttons = annotater.marginalia.get_buttons(uri)
             values = {
                     'marginalia_media'   : media,
