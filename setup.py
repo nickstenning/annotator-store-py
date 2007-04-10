@@ -20,9 +20,14 @@ setup(
     author = 'Rufus Pollock (Open Knowledge Foundation)',
     author_email = 'rufus@rufuspollock.org',
     description = \
-"Inline web annotation.",
+"Inline javascript-based web annotation.",
     long_description = \
 """
+Inline javascript-based web annotation library incorporating Marginalia
+(http://www.geof.net/code/annotation). Package includeds a database-backed
+annotation store with RESTFul (WSGI-powered) web-interface, abstraction layer
+around marginalia to make it easy to incorporate it into your web application
+and all the marginalia media files (with improvements).
 """,
     license = 'MIT',
     keywords = 'annotation web javascript',
