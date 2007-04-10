@@ -1,6 +1,6 @@
 ## Introduction
 
-Annotater is a web annotation system for python built on Geof Glass'
+Annotater is a inline web annotation system for python built on Geof Glass'
 [marginalia].
 
 [marginalia]: http://www.geof.net/code/annotation

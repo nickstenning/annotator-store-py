@@ -20,7 +20,7 @@ setup(
     author = 'Rufus Pollock (Open Knowledge Foundation)',
     author_email = 'rufus@rufuspollock.org',
     description = \
-"Web-based inline annotation of a web resource.",
+"Inline web annotation.",
     long_description = \
 """
 """,
