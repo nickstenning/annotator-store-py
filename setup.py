@@ -13,7 +13,10 @@ setup(
     # package_data = {
     #    'annotater.marginalia' : ['*.js', '*.css', 'lang/*' ],
     #    },
-    install_requires = [ 'SQLObject >= 0.7', 'Paste >= 1.0', 'wsgiref' ],
+    install_requires = [ 'SQLObject >= 0.7',
+        'FormEncode<=0.6,>=0.4',
+        'Paste >= 1.0',
+        'wsgiref' ],
     scripts = [],
 
     # metadata for upload to PyPI
