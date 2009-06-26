@@ -11,8 +11,7 @@ import paste.request
 
 from routes import *
 
-# annotater stuff
-import annotater.model
+import annotater.model as model
 
 
 class AnnotaterStore(object):
@@ -74,7 +73,8 @@ class AnnotaterStore(object):
         self.path = environ['PATH_INFO']
         self.mapdict = self.map.match(self.path)
         action = self.mapdict['action']
-        self.anno_schema = annotater.model.AnnotationSchema()
+        # TODO: reinstate
+        # self.anno_schema = model.AnnotationSchema()
         if action != 'delete':
             self.query_vals = paste.request.parse_formvars(self.environ)
         else: 
@@ -142,7 +142,7 @@ class AnnotaterStore(object):
         response_headers = [ ('Content-type', 'text/html') ]
         result = ''
         if format == 'html':
-            result = annotater.model.Annotation.list_annotations_html()
+            result = model.Annotation.list_annotations_html()
             result = \
 '''<html>
 <head>
@@ -154,7 +154,7 @@ class AnnotaterStore(object):
 </html>''' % (result)
         elif format == 'atom':
             response_headers = [ ('Content-type', 'application/xml') ]
-            result = annotater.model.Annotation.list_annotations_atom()
+            result = model.Annotation.list_annotations_atom()
         else:
             status = '500 Internal server error'
             result = 'Unknown format: %s' % format
@@ -186,7 +186,7 @@ class AnnotaterStore(object):
         url = self.query_vals.get('url')
         range = self.query_vals.get('range', 'NO RANGE')
         note = self.query_vals.get('note', 'NO NOTE')
-        anno = annotater.model.Annotation(
+        anno = model.Annotation(
                 url=url,
                 range=range,
                 note=note)
@@ -211,7 +211,7 @@ class AnnotaterStore(object):
             self.start_response(status, response_headers)
             msg = '<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
             return [msg]
-        anno = annotater.model.Annotation.get(id)
+        anno = model.Annotation.get(id)
         posturl = self.map.generate(controller='annotation',
                 action='update', id=anno.id, method='POST')
         print 'Post url:', posturl
@@ -245,7 +245,7 @@ class AnnotaterStore(object):
             # as comes from js need to add in the existing values for to_python
             # this is a bit of a hack but it the easiest way i can think of to
             # merge the values
-            current = annotater.model.Annotation.get(id)
+            current = model.Annotation.get(id)
             current_defaults = self.anno_schema.from_python(current)
             for key in current_defaults.keys():
                 if not new_values.has_key(key):
@@ -269,12 +269,13 @@ class AnnotaterStore(object):
         else:
             status = '204 Deleted'
             try:
-                id = int(id)
-                annotater.model.Annotation.delete(id)
+                model.Annotation.delete(id)
+                response_headers = [ ]
                 self.start_response(status, response_headers)
                 return []
-            except:
+            except Exception, inst:
                 status = '500 Internal server error'
                 self.start_response(status, response_headers)
-                return ['<h1>500 Internal Server Error</h1>Delete failed']
+                return ['<h1>500 Internal Server Error</h1>Delete failed\n %s'%
+                        inst]
     

@@ -2,7 +2,6 @@ from setuptools import setup, find_packages
 
 from annotater import __version__
 
-
 setup(
     name = 'annotater',
     version = __version__,
@@ -13,10 +12,14 @@ setup(
     # package_data = {
     #    'annotater.marginalia' : ['*.js', '*.css', 'lang/*' ],
     #    },
-    install_requires = [ 'SQLObject >= 0.7',
-        'FormEncode>=0.4',
+    install_requires = [
+        'SQLAlchemy>=0.5',
+        'FormAlchemy>=1.0',
         'Paste >= 1.0',
-        'wsgiref' ],
+        'PasteDeploy',
+        'nose',
+        'routes>=1.7',
+        ],
     scripts = [],
 
     # metadata for upload to PyPI

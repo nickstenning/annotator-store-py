@@ -4,11 +4,9 @@ import tempfile
 import commands
 from StringIO import StringIO
 
-import twill
-from twill import commands as web
-
-import annotater.model
-annotater.model.set_default_connection()
+import annotater.model as model
+model.set_default_connection()
+model.createdb()
 import annotater.store
 
 class TestMapper:
@@ -91,7 +89,7 @@ class TestMapper:
         assert offset == exp
 
 
-class TestStatic:
+class _TestStatic:
     
     def test__make_annotate_form(self):
         app = annotater.store.AnnotaterStore()
@@ -103,87 +101,79 @@ value="%s" /><br />' % defaults['url']
         assert exp1 in out
 
 
-class TestAnnotaterStore:
+class TestAnnotaterStore(object):
+
+    def __init__(self, *args, **kwargs):
+        # from paste.deploy import loadapp
+        # wsgiapp = loadapp('config:test.ini', relative_to=conf_dir)
+        import paste.fixture
+        wsgiapp = annotater.store.AnnotaterStore()
+        self.app = paste.fixture.TestApp(wsgiapp)
 
     store = annotater.store.AnnotaterStore()
     map = store.get_routes_mapper()
 
-    def setup_method(self, name=''):
-        twill.add_wsgi_intercept('localhost', 8080, lambda : self.store)
-        self.outp = StringIO()
-        twill.set_output(self.outp)
-        self.siteurl = 'http://localhost:8080/'
-
-    def teardown_method(self, name=''):
-        # remove intercept.
-        twill.remove_wsgi_intercept('localhost', 8080)
-
-    def test_annotate_get(self):
-        anno = self._create_annotation()
+    def test_0_annotate_get(self):
+        anno_id = self._create_annotation()
+        print anno_id
         offset = self.map.generate(controller='annotation', action='index')
-        url = self.siteurl + offset[1:]
-        web.go(url)
-        web.code(200)
-        web.find(anno.url)
-        web.find(anno.range)
+        res = self.app.get(offset)
+        anno = model.Annotation.query.get(anno_id)
+        assert anno.url in res
 
-    def test_annotate_get_atom(self):
-        anno = self._create_annotation()
+    def test_1_annotate_get_atom(self):
+        anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='index')
-        url = self.siteurl + offset[1:] + '?format=atom'
-        web.go(url)
-        web.code(200)
-        web.find(anno.note)
-        web.find(anno.range)
-        out = web.show()
+        offset += '?format=atom'
+        print offset
+        res = self.app.get(offset)
+        anno = model.Annotation.query.get(anno_id)
+        assert anno.note in res, res
+        assert anno.range in res
         exp1 = '<feed xmlns:ptr="http://www.geof.net/code/annotation/"'
-        assert exp1 in out
+        assert exp1 in res
 
-    def test_annotate_new(self):
+    def _test_annotate_new(self):
         # exercises both create and new
-        annotater.model.rebuilddb()
+        model.rebuilddb()
         offset = self.map.generate(controller='annotation', action='new',
                 method='GET')
-        url = self.siteurl + offset[1:]
-        web.go(url)
-        web.code(200)
+        res = self.app.get(offset)
         note = 'any old thing'
         web.fv('', 'url', 'http://localhost/')
         web.fv('', 'note', note)
         web.submit()
         web.code(201)
         # TODO make this test more selective
-        items = annotater.model.Annotation.select()
+        items = model.Annotation.select()
         items = list(items)
         assert len(items) == 1
         assert items[0].note == note
 
     def test_annotate_delete(self):
-        anno = self._create_annotation()
+        anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='delete',
-                method='GET', id=anno.id)
-        url = self.siteurl + offset[1:] + '?blah='
-        web.go(url)
-        web.code(204)
-        tmp = annotater.model.Annotation.select(annotater.model.Annotation.q.id == anno.id)
-        num = len(list(tmp))
-        assert num == 0
+                method='GET', id=anno_id)
+        self.app.get(offset, '204')
+        tmp = model.Annotation.query.get(anno_id)
+        assert tmp is None
     
     def _create_annotation(self):
-        anno = annotater.model.Annotation(
-                url='http://xyz.com',
-                range='1.0 2.0',
-                note='blah note',
+        anno = model.Annotation(
+                url=u'http://xyz.com',
+                range=u'1.0 2.0',
+                note=u'blah note',
                 )
-        return anno
+        model.Session.commit()
+        anno_id = anno.id
+        model.Session.remove()
+        return anno_id
 
-    def test_annotate_edit(self):
+    def _test_annotate_edit(self):
         anno = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='edit',
                 id=anno.id, method='GET')
-        url = self.siteurl + offset[1:]
-        web.go(url)
-        web.code(200)
+        res = self.app.get(offset)
         newnote = u'This is a NEW note, a NEW note I say.'
         web.fv('', 'note', newnote)
         web.submit()
@@ -192,15 +182,11 @@ class TestAnnotaterStore:
     
     def test_not_found(self):
         offset = self.map.generate(controller='annotation')
-        url = self.siteurl + offset[1:] + '/blah'
-        web.go(url)
-        web.code(404)
+        self.app.get(offset, '404')
 
-    def test_bad_request(self):
+    def _test_bad_request(self):
         offset = self.map.generate(controller='annotation', action='edit',
                 method='GET')
-        url = self.siteurl + offset[1:]
-        web.go(url)
-        web.code(400)
+        self.app.get(offset, '400')
         
 

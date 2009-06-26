@@ -1,52 +1,81 @@
 import os
+import uuid
 from datetime import datetime
 import cgi
 
-import sqlobject
+from sqlalchemy import create_engine
+from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
+# TODO: restrict imports ...
+from sqlalchemy import *
+
+metadata = MetaData()
+
+from sqlalchemy.orm import scoped_session, sessionmaker, create_session
+from sqlalchemy.orm import relation, backref
+# both options now work
+# Session = scoped_session(sessionmaker(autoflush=False, transactional=True))
+# this is the more testing one ...
+Session = scoped_session(sessionmaker(
+    autoflush=True,
+    autocommit=False,
+    ))
+
+mapper = Session.mapper
 
 def set_default_connection():
     cwd = os.getcwd()
     uri = 'sqlite://%s/sqlite.db' % cwd
     # uri = 'sqlite:///:memory:'
-    connection = sqlobject.connectionForURI(uri)
-    sqlobject.sqlhub.processConnection = connection
-    createdb()
+    engine = create_engine('sqlite:///:memory:', echo=False)
+    metadata.bind = engine
+    Session.bind = engine
 
-# must not set this here as annotater and its model will be reused in other
-# applications that will set up there own database connections
-# set_default_connection()
-
-# note we run this at bottom of module to auto create db tables on import
 def createdb():
-    Annotation.createTable(ifNotExists=True)
+    metadata.create_all()
 
 def cleandb():
-    Annotation.dropTable(ifExists=True)
+    metadata.drop_all()
 
 def rebuilddb():
     cleandb()
     createdb()
 
-class Annotation(sqlobject.SQLObject):
+annotation_table = Table('annotation', metadata,
+    Column('id', String(36), primary_key=True, default=lambda:
+        str(uuid.uuid4())),
+    Column('url', UnicodeText),
+    Column('range', UnicodeText),
+    Column('note', UnicodeText),
+    Column('quote', UnicodeText),
+    Column('created', DateTime, default=datetime.now),
+    )
 
-    url = sqlobject.UnicodeCol()
-    range = sqlobject.StringCol()
-    note = sqlobject.UnicodeCol()
-    quote = sqlobject.UnicodeCol(default=None)
-    created = sqlobject.DateTimeCol(default=datetime.now) 
+
+class Annotation(object):
 
     @classmethod
-    def list_annotations_html(cls, url='', userid='', exlude=''):
+    def delete(self, id):
+        anno = self.query.get(id)
+        if anno:
+            Session.delete(anno)
+        Session.commit()
+
+    def __str__(self):
+        out = u'%s %s %s' % (self.__class__.__name__, self.id, self.url)
+        return out.encode('utf8', 'ignore')
+
+    @classmethod
+    def list_annotations_html(cls, url=u''):
         import cgi
-        query_results = cls.select(cls.q.url.startswith(url))
+        query_results = cls.query.filter(cls.url.startswith(url))
         out = ''
         for item in query_results:
             out += '<pre>%s</pre>' % cgi.escape(str(item)) + '\n\n'
         return out
 
     @classmethod
-    def list_annotations_atom(cls, url='', userid='', exlude=''):
-        query_results = cls.select(cls.q.url.startswith(url))
+    def list_annotations_atom(cls, url=u''):
+        query_results = cls.query.filter(cls.url.startswith(url))
         # create the Atom by hand -- maybe in future we can use a library
         ns_xhtml = '' 
         annotation_service = 'http://localhost:8080/annotation'
@@ -86,9 +115,10 @@ u'''<?xml version="1.0" encoding="utf-8"?>
     )
         return atom.encode('utf8')
 
+mapper(Annotation, annotation_table)
 
-from formencode import sqlschema
-class AnnotationSchema(sqlschema.SQLSchema):
-
-    wrap = Annotation
+# from formencode import sqlschema
+# class AnnotationSchema(sqlschema.SQLSchema):
+#
+#    wrap = Annotation
 
