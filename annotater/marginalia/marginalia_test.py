@@ -79,42 +79,30 @@ blah &amp; blah
         assert out == self.exp
 
 
-# class TestMarginaliaFiles:
-# 
-#     def setup_method(self, name=''):
-#         # set without trailing slash
-#         self.base_url = '/marginalia'
-#         wsgi_app = annotater.marginalia.MarginaliaMedia(self.base_url)
-#         self.base_url = '/marginalia' + '/'
-#         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
-#         twill.set_output(StringIO())
-#         self.siteurl = 'http://localhost:8080'
-# 
-#     def teardown_method(self, name=''):
-#         twill.remove_wsgi_intercept('localhost', 8080)
-# 
-#     def test_js(self):
-#         filename = 'domutil.js'
-#         url = self.siteurl + self.base_url + filename
-#         print url
-#         web.go(url)
-#         web.code(200)
-#         web.find('ELEMENT_NODE = 1;')
-# 
-#     def test_js_2(self):
-#         filename = 'lang/en.js'
-#         url = self.siteurl + self.base_url + filename
-#         web.go(url)
-#         web.code(200)
-# 
-# 
-# class TestMarginaliaFiles2(TestMarginaliaFiles):
-#     # a different base name
-# 
-#     def setup_method(self, name=''):
-#         self.base_url = '/'
-#         wsgi_app = annotater.marginalia.MarginaliaMedia(self.base_url)
-#         twill.add_wsgi_intercept('localhost', 8080, lambda : wsgi_app)
-#         twill.set_output(StringIO())
-#         self.siteurl = 'http://localhost:8080'
+import paste.fixture
+class TestMarginaliaFiles:
+    # set without trailing slash
+    base_url = '/marginalia'
+
+    @classmethod
+    def setup_class(self):
+        wsgiapp = annotater.marginalia.MarginaliaMedia(self.base_url)
+        self.app = paste.fixture.TestApp(wsgiapp)
+
+    def test_js(self):
+        filename = 'domutil.js'
+        url = self.base_url + filename
+        print url
+        res = self.app.get(url)
+        assert 'ELEMENT_NODE = 1;' in res
+
+    def test_js_2(self):
+        filename = 'lang/en.js'
+        url = self.base_url + filename
+        res = self.app.get(url)
+
+
+class TestMarginaliaFiles2(TestMarginaliaFiles):
+    # a different base name
+    base_url = '/'
 
