@@ -26,20 +26,24 @@ def setup_logging():
     fh = logging.FileHandler(log_file_path, 'w')
     fh.setLevel(level)
     logger.addHandler(fh)
-    logger.info('START LOGGING')
     return logger
 
 logger = setup_logging()
+logger.info('START LOGGING')
+# where we put the marginalia js
+media_mount_path = '/'
 
 class AnnotaterDemo(object):
 
     def __call__(self, environ, start_response):
         self.store = annotater.store.AnnotaterStore()
-        self.media_app = annotater.marginalia.MarginaliaMedia('/')
+        self.media_app = annotater.marginalia.MarginaliaMedia(media_mount_path)
         self.path = environ['PATH_INFO']
         if self.path.startswith('/debug'):
             return wsgiref.simple_server.demo_app(environ, start_response)
         elif self.path.endswith('.js') or self.path.endswith('.css'):
+
+            logger.info(self.path)
             return self.media_app(environ, start_response)
         elif self.path.startswith(service_path):
             return self.store(environ, start_response)
@@ -49,7 +53,6 @@ class AnnotaterDemo(object):
             response_headers = [('Content-type','text/html')]
             start_response(status, response_headers)
             out = file(html_doc_path).read()
-            media_mount_path = '/'
             host = 'http://localhost:8080/'
             # use the uri as the identifier
             uri = wsgiref.util.request_uri(environ)
@@ -69,4 +72,6 @@ class AnnotaterDemo(object):
 if __name__ == '__main__': 
     app = AnnotaterDemo()
     import paste.httpserver
+    from annotater.marginalia import *
     paste.httpserver.serve(app)
+

@@ -81,8 +81,8 @@ blah &amp; blah
 
 import paste.fixture
 class TestMarginaliaFiles:
-    # set without trailing slash
-    base_url = '/marginalia'
+    # set with trailing slash
+    base_url = '/marginalia/'
 
     @classmethod
     def setup_class(self):
@@ -92,13 +92,17 @@ class TestMarginaliaFiles:
     def test_js(self):
         filename = 'domutil.js'
         url = self.base_url + filename
-        print url
         res = self.app.get(url)
-        assert 'ELEMENT_NODE = 1;' in res
+        assert 'ELEMENT_NODE = 1;' in res, (url, res)
 
+        filename = 'onload.js'
+        res = self.app.get(self.base_url + filename)
+
+    # ditto here
     def test_js_2(self):
         filename = 'lang/en.js'
         url = self.base_url + filename
+        print url
         res = self.app.get(url)
 
 

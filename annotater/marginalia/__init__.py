@@ -103,46 +103,32 @@ def format_entry(**kwargs):
     return result
 
 
+# path to this directory
+this_module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 class MarginaliaMedia(object):
     """WSGI App to make available the marginalia media files needed for
     marginalia javascript annotation to work.
     """
 
-    def __init__(self, mount_path):
+    def __init__(self, mount_path, marginalia_media_path=this_module_path, **kwargs):
         """
         @param mount_path: url path at which this app is mounted e.g. /marginalia
+        @param marginalia_media_path: path on disk to marginalia files
+        (defaults to this module's directory)
         """
         self.mount_path = mount_path
         # remove the trailing slash
         if self.mount_path.endswith('/'):
             self.mount_path = self.mount_path[:-1]
         import paste.urlparser
-        self.fileserver_app = paste.urlparser.make_pkg_resources(
-                {},
-                'annotater',
-                'annotater/marginalia'
-                )
+        self.fileserver_app = paste.urlparser.StaticURLParser(marginalia_media_path)
 
     def __call__(self, environ, start_response):
-        path_info = environ['PATH_INFO']
-        filename = path_info[len(self.mount_path):]
-        environ['PATH_INFO'] = filename
-        return self.fileserver_app(environ, start_response)
-        if filename.endswith('.js') or filename.endswith('.css'):
-            status = '200 OK'
-            if filename.endswith('.js'): filetype = 'text/javascript'
-            else: filetype = 'text/css'
-            response_headers = [('Content-type', filetype)]
-            start_response(status, response_headers)
-            fp = os.path.join(self.media_path, filename)
-            fo = file(fp)
-            content = fo.read()
-            fo.close()
-            return [content]
+        if environ.get('PATH_INFO', '').startswith(self.mount_path):
+            path_info = environ['PATH_INFO']
+            filename = path_info[len(self.mount_path):]
+            environ['PATH_INFO'] = filename
+            return self.fileserver_app(environ, start_response)
         else:
-            status = '404 Not Found'
-            response_headers = [('Content-type','text/html')]
-            start_response(status, response_headers)
-            out = 'File %s not found' % filename
-            return [out]
+            pass
 
