@@ -39,6 +39,7 @@ and all the marginalia media files (with improvements).
     keywords = 'annotation web javascript',
     url = 'http://p.knowledgeforge.net/shakespeare/svn/annotater/', 
     download_url = 'http://p.knowledgeforge.net/shakespeare/svn/annotater/trunk',
+    zip_safe=False,
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Console',

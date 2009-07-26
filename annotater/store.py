@@ -13,6 +13,7 @@ from routes import *
 
 import annotater.model as model
 
+logger = logging.getLogger('annotater')
 
 class AnnotaterStore(object):
     "Application to provide 'annotation' store."
@@ -26,7 +27,6 @@ class AnnotaterStore(object):
             Should be specified without leading or trailing '/'.
         """
         self.service_path = service_path
-        self.logger = self.setup_logging()
 
     def get_routes_mapper(self):
         # some extra additions to standard layout from map.resource
@@ -54,17 +54,6 @@ class AnnotaterStore(object):
                 conditions=dict(method=['POST']))
         return map
 
-    def setup_logging(self):
-        level = logging.DEBUG
-        logger = logging.getLogger('annotater')
-        logger.setLevel(level)
-        log_file_path = 'annotater-debug.log'
-        fh = logging.FileHandler(log_file_path, 'w')
-        fh.setLevel(level)
-        logger.addHandler(fh)
-        logger.info('START LOGGING')
-        return logger
-
     def __call__(self, environ, start_response):
         self.environ = environ
         self.map = self.get_routes_mapper()
@@ -77,6 +66,10 @@ class AnnotaterStore(object):
         # self.anno_schema = model.AnnotationSchema()
         if action != 'delete':
             self.query_vals = paste.request.parse_formvars(self.environ)
+            for k,v in self.query_vals.items():
+                # some reason we are not getting unicode back!
+                if isinstance(v, basestring):
+                    self.query_vals[k] = unicode(v)
         else: 
             # DELETE from js causes paste.request.parse_formvars to hang since
             # we do not need it for delete if using clean urls just skip
@@ -84,21 +77,17 @@ class AnnotaterStore(object):
             self.query_vals = {}
 
         if self.DEBUG:
-            self.logger.debug('** CALL TO ANNOTATE')
-            self.logger.debug('path: %s' % self.path)
-            self.logger.debug('environ: %s' % environ)
-            self.logger.debug('mapdict: %s' % self.mapdict)
-            self.logger.debug('query_vals: %s' % self.query_vals)
+            logger.debug('** CALL TO ANNOTATE')
+            logger.debug('path: %s' % self.path)
+            logger.debug('environ: %s' % environ)
+            logger.debug('mapdict: %s' % self.mapdict)
+            logger.debug('query_vals: %s' % self.query_vals)
 
 
         if action == 'index':
             return self.index()
-        elif action == 'new':
-            return self.new()
         elif action == 'create':
             return self.create()
-        elif action == 'edit':
-            return self.edit()
         elif action == 'update':
             return self.update()
         elif action == 'delete':
@@ -161,35 +150,15 @@ class AnnotaterStore(object):
         self.start_response(status, response_headers)
         return [result]
     
-    def new(self):
-        status = '200 OK'
-        response_headers = [
-                ('Content-type', 'text/html'),
-                ]
-        posturl = self.map.generate(controller='annotation', action='create')
-        form = \
-'''<html>
-<head></head>
-<body>
-    <form name='annotation_create' action="%s" method="POST">
-       <label>url:</label> <input name="url" id="url" /><br />
-       <label>range:</label><input name="range" id="range" /><br />
-       <label>note:</label><input name="note" id="note" /><br />
-       <input type="submit" name="submission" value="send the form" />
-   </form>
-</body>
-</html>''' % posturl
-        self.start_response(status, response_headers)
-        return [ form ]
-
     def create(self):
         url = self.query_vals.get('url')
-        range = self.query_vals.get('range', 'NO RANGE')
-        note = self.query_vals.get('note', 'NO NOTE')
+        range = self.query_vals.get('range', u'NO RANGE')
+        note = self.query_vals.get('note', u'NO NOTE')
         anno = model.Annotation(
                 url=url,
                 range=range,
                 note=note)
+        model.Session.commit()
         status = '201 Created'
         location = '/annotation/%s' % anno.id
         response_headers = [
@@ -199,36 +168,10 @@ class AnnotaterStore(object):
         self.start_response(status, response_headers)
         return ['']
 
-    def edit(self):
-        id = self.mapdict['id']
-        try:
-            id = int(id)
-        except:
-            status = '400 Bad Request'
-            response_headers = [
-                ('Content-type', 'text/html'),
-                ]
-            self.start_response(status, response_headers)
-            msg = '<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
-            return [msg]
-        anno = model.Annotation.get(id)
-        posturl = self.map.generate(controller='annotation',
-                action='update', id=anno.id, method='POST')
-        print 'Post url:', posturl
-        form_defaults = self.anno_schema.from_python(anno)
-        form = self._make_annotate_form('annotate_edit', posturl,
-                form_defaults)
-        status = '200 OK'
-        response_headers = [
-                ('Content-type', 'text/html'),
-                ]
-        self.start_response(status, response_headers)
-        return [ form ]
-
     def update(self):
         id = self.mapdict['id']
         try:
-            id = int(id)
+            existing = model.Annotation.query.get(id)
         except:
             status = '400 Bad Request'
             response_headers = [
@@ -239,20 +182,9 @@ class AnnotaterStore(object):
             return [msg]
         new_values = dict(self.query_vals)
         new_values['id'] = id
-        if new_values.has_key('submission'): # comes from post
-            del new_values['submission']
-        else: # comes direct from js
-            # as comes from js need to add in the existing values for to_python
-            # this is a bit of a hack but it the easiest way i can think of to
-            # merge the values
-            current = model.Annotation.get(id)
-            current_defaults = self.anno_schema.from_python(current)
-            for key in current_defaults.keys():
-                if not new_values.has_key(key):
-                    new_values[key] = current_defaults[key]
-            # remove attributes coming from js that we do not yet support
-            del new_values['access']
-        anno_edited = self.anno_schema.to_python(new_values)
+        for k,v in new_values.items():
+            setattr(existing, k, v)
+        model.Session.commit()
         status = '204 Updated'
         response_headers = []
         self.start_response(status, response_headers)

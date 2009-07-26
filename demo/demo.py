@@ -1,10 +1,23 @@
 import os
 import wsgiref.util
+import logging
+def setup_logging():
+    level = logging.INFO
+    logger = logging.getLogger('annotater')
+    logger.setLevel(level)
+    log_file_path = 'annotater-debug.log'
+    fh = logging.FileHandler(log_file_path, 'w')
+    fh.setLevel(level)
+    logger.addHandler(fh)
+    return logger
+logger = setup_logging()
+logger.info('START LOGGING')
 
 import paste.request
 
 import annotater.model
 annotater.model.set_default_connection()
+annotater.model.createdb()
 import annotater.store
 import annotater.marginalia
 
@@ -17,19 +30,6 @@ service_path = '/annotation'
 this_directory = os.path.dirname(__file__)
 html_doc_path = os.path.join(this_directory, 'demo.html')
 
-import logging
-def setup_logging():
-    level = logging.DEBUG
-    logger = logging.getLogger('annotater')
-    logger.setLevel(level)
-    log_file_path = 'annotater-debug.log'
-    fh = logging.FileHandler(log_file_path, 'w')
-    fh.setLevel(level)
-    logger.addHandler(fh)
-    return logger
-
-logger = setup_logging()
-logger.info('START LOGGING')
 # where we put the marginalia js
 media_mount_path = '/'
 
@@ -43,7 +43,6 @@ class AnnotaterDemo(object):
             return wsgiref.simple_server.demo_app(environ, start_response)
         elif self.path.endswith('.js') or self.path.endswith('.css'):
 
-            logger.info(self.path)
             return self.media_app(environ, start_response)
         elif self.path.startswith(service_path):
             return self.store(environ, start_response)

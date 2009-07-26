@@ -53,6 +53,8 @@ class TestMapper:
         out = self.map.match('/annotation/edit/1')
         assert out['action'] == 'edit'
         assert out['id'] == '1'
+
+    def test_match_update(self):
         self.map.environ = { 'REQUEST_METHOD' : 'PUT' }
         out = self.map.match('/annotation/1')
         assert out['action'] == 'update'
@@ -87,6 +89,12 @@ class TestMapper:
                 action='edit', id=1, method='GET')
         exp = '/annotation/edit/1'
         assert offset == exp
+
+    def test_url_for_update(self):
+        offset = self.map.generate(controller='annotation',
+                action='update', id=1, method='POST')
+        exp = '/annotation/1'
+        assert offset == exp, (offset, exp)
 
 
 class _TestStatic:
@@ -133,19 +141,15 @@ class TestAnnotaterStore(object):
         exp1 = '<feed xmlns:ptr="http://www.geof.net/code/annotation/"'
         assert exp1 in res
 
-    def _test_annotate_new(self):
-        # exercises both create and new
+    def test_annotate_create(self):
         model.rebuilddb()
-        offset = self.map.generate(controller='annotation', action='new',
-                method='GET')
-        res = self.app.get(offset)
-        note = 'any old thing'
-        web.fv('', 'url', 'http://localhost/')
-        web.fv('', 'note', note)
-        web.submit()
-        web.code(201)
+        offset = self.map.generate(controller='annotation', action='create')
+        note = u'any old thing'
+        params = {'note': note, 'url': 'http://localhost/'}
+        print offset
+        res = self.app.post(offset, params)
         # TODO make this test more selective
-        items = model.Annotation.select()
+        items = model.Annotation.query.all()
         items = list(items)
         assert len(items) == 1
         assert items[0].note == note
@@ -169,15 +173,15 @@ class TestAnnotaterStore(object):
         model.Session.remove()
         return anno_id
 
-    def _test_annotate_edit(self):
-        anno = self._create_annotation()
-        offset = self.map.generate(controller='annotation', action='edit',
-                id=anno.id, method='GET')
-        res = self.app.get(offset)
+    def test_annotate_update(self):
+        anno_id = self._create_annotation()
+        offset = self.map.generate(controller='annotation', action='update',
+                id=anno_id)
         newnote = u'This is a NEW note, a NEW note I say.'
-        web.fv('', 'note', newnote)
-        web.submit()
-        web.code(204)
+        params = { 'note': newnote }
+        self.app.post(offset, params)
+        model.Session.remove()
+        anno = model.Annotation.query.get(anno_id)
         assert anno.note == newnote
     
     def test_not_found(self):

@@ -2,6 +2,8 @@ import os
 import uuid
 from datetime import datetime
 import cgi
+import logging
+logger = logging.getLogger('annotater')
 
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
@@ -24,17 +26,20 @@ mapper = Session.mapper
 
 def set_default_connection():
     cwd = os.getcwd()
-    uri = 'sqlite://%s/sqlite.db' % cwd
+    path = os.path.join(cwd, 'testsqlite.db')
+    uri = 'sqlite:///%s' % path
     # uri = 'sqlite:///:memory:'
-    engine = create_engine('sqlite:///:memory:', echo=False)
+    engine = create_engine(uri, echo=False)
     metadata.bind = engine
     Session.bind = engine
 
 def createdb():
+    logger.info('Creating db')
     metadata.create_all()
 
 def cleandb():
     metadata.drop_all()
+    logger.info('Cleaned db')
 
 def rebuilddb():
     cleandb()
@@ -116,9 +121,4 @@ u'''<?xml version="1.0" encoding="utf-8"?>
         return atom.encode('utf8')
 
 mapper(Annotation, annotation_table)
-
-# from formencode import sqlschema
-# class AnnotationSchema(sqlschema.SQLSchema):
-#
-#    wrap = Annotation
 
