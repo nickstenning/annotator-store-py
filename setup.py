@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-from annotater import __version__
+from annotater import __version__, __license__, __author__
 
 setup(
     name = 'annotater',
@@ -23,10 +23,10 @@ setup(
     scripts = [],
 
     # metadata for upload to PyPI
-    author = 'Rufus Pollock (Open Knowledge Foundation)',
+    author = __author__,
     author_email = 'rufus@rufuspollock.org',
     description = \
-"Inline javascript-based web annotation.",
+'Inline web annotation application and middleware using javascript and WSGI',
     long_description = \
 """
 Inline javascript-based web annotation library incorporating Marginalia
@@ -35,7 +35,7 @@ annotation store with RESTFul (WSGI-powered) web-interface, abstraction layer
 around marginalia to make it easy to incorporate it into your web application
 and all the marginalia media files (with improvements).
 """,
-    license = 'MIT',
+    license = __license__,
     keywords = 'annotation web javascript',
     url = 'http://p.knowledgeforge.net/shakespeare/svn/annotater/', 
     download_url = 'http://p.knowledgeforge.net/shakespeare/svn/annotater/trunk',

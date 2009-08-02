@@ -1,7 +1,7 @@
 """Annotation of a web resource.
 
-@copyright: (c) 2006-2007 Open Knowledge Foundation
-@author: Rufus Pollock (Open Knowledge Foundation)
-@license: MIT License <http://www.opensource.org/licenses/mit-license.php>
+@copyright: (c) 2006-2009 Open Knowledge Foundation
 """
-__version__ = '0.2'
+__version__ = '0.3a'
+__license__ = 'MIT'
+__author__ = 'Rufus Pollock (Open Knowledge Foundation)'
