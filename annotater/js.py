@@ -1,3 +1,5 @@
+'''Integrate required javascript into the web (WSGI) application.
+'''
 import os
 
 def get_media_header(media_url_base, annotation_store_fqdn, page_uri):
@@ -104,13 +106,16 @@ def format_entry(**kwargs):
 
 
 # path to this directory
-this_module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)))
+_here_dir = os.path.dirname(os.path.abspath(__file__))
+default_marginalia_media_path = os.path.join(_here_dir, 'marginalia')
 class MarginaliaMedia(object):
     """WSGI App to make available the marginalia media files needed for
     marginalia javascript annotation to work.
     """
 
-    def __init__(self, mount_path, marginalia_media_path=this_module_path, **kwargs):
+    def __init__(self, mount_path,
+            marginalia_media_path=default_marginalia_media_path,
+            **kwargs):
         """
         @param mount_path: url path at which this app is mounted e.g. /marginalia
         @param marginalia_media_path: path on disk to marginalia files

@@ -19,7 +19,7 @@ import annotater.model
 annotater.model.set_default_connection()
 annotater.model.createdb()
 import annotater.store
-import annotater.marginalia
+import annotater.js
 
 # Offset url to annotation store 
 # Because of hard-coding in the marginalia js libraries this *must* be set to
@@ -37,7 +37,7 @@ class AnnotaterDemo(object):
 
     def __call__(self, environ, start_response):
         self.store = annotater.store.AnnotaterStore()
-        self.media_app = annotater.marginalia.MarginaliaMedia(media_mount_path)
+        self.media_app = annotater.js.MarginaliaMedia(media_mount_path)
         self.path = environ['PATH_INFO']
         if self.path.startswith('/debug'):
             return wsgiref.simple_server.demo_app(environ, start_response)
@@ -55,10 +55,10 @@ class AnnotaterDemo(object):
             host = 'http://localhost:8080/'
             # use the uri as the identifier
             uri = wsgiref.util.request_uri(environ)
-            media = annotater.marginalia.get_media_header(media_mount_path,
+            media = annotater.js.get_media_header(media_mount_path,
                     host,
                     uri)
-            buttons = annotater.marginalia.get_buttons(uri)
+            buttons = annotater.js.get_buttons(uri)
             values = {
                     'marginalia_media'   : media,
                     'annotation_buttons' : buttons,
@@ -71,6 +71,6 @@ class AnnotaterDemo(object):
 if __name__ == '__main__': 
     app = AnnotaterDemo()
     import paste.httpserver
-    from annotater.marginalia import *
+    from annotater.js import *
     paste.httpserver.serve(app)
 

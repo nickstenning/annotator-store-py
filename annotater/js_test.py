@@ -1,7 +1,7 @@
 import os
 from StringIO import StringIO
 
-import annotater.marginalia
+import annotater.js
 
 
 class TestGetMediaHeader:
@@ -10,7 +10,7 @@ class TestGetMediaHeader:
     page_uri = 'http://demo.openshakespeare.org/demo.html' 
 
     def test_1(self):
-        out = annotater.marginalia.get_media_header(self.base_url,
+        out = annotater.js.get_media_header(self.base_url,
                 self.app_url,
                 self.page_uri)
         assert self.base_url in out
@@ -20,7 +20,7 @@ class TestGetMediaHeader:
 
     def test_no_trailing_slash_on_app_url(self):
         app_url = self.app_url + '/'
-        out = annotater.marginalia.get_media_header(self.base_url,
+        out = annotater.js.get_media_header(self.base_url,
                 app_url,
                 self.page_uri)
         assert app_url not in out
@@ -31,7 +31,7 @@ class TestGetButtons:
 
     def test_1(self):
         uri = 'http://demo.openshakespeare.org/view?name=blahblah'
-        out = annotater.marginalia.get_buttons(uri)
+        out = annotater.js.get_buttons(uri)
         assert uri in out
 
 
@@ -62,7 +62,7 @@ blah &amp; blah
     def test_format(self):
         newtitle = 'Test Stuff'
         page_url = 'http://demo.openshakespeare.org/'
-        out = annotater.marginalia.format_entry(
+        out = annotater.js.format_entry(
                 content=self.starttext,
                 page_uri=page_url,
                 title=newtitle,
@@ -86,7 +86,7 @@ class TestMarginaliaFiles:
 
     @classmethod
     def setup_class(self):
-        wsgiapp = annotater.marginalia.MarginaliaMedia(self.base_url)
+        wsgiapp = annotater.js.MarginaliaMedia(self.base_url)
         self.app = paste.fixture.TestApp(wsgiapp)
 
     def test_js(self):
