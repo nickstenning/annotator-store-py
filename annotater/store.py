@@ -20,35 +20,36 @@ class AnnotaterStore(object):
 
     DEBUG = True
 
-    def __init__(self, service_path='annotation'):
+    def __init__(self, service_path):
         """Create the WSGI application.
 
         @param service_path: offset url where this application is mounted.
-            Should be specified without leading or trailing '/'.
         """
+        if not service_path.startswith('/'):
+            service_path = '/' + service_path
         self.service_path = service_path
 
     def get_routes_mapper(self):
         # some extra additions to standard layout from map.resource
         # help to make the url layout a bit nicer for those using the web ui
         map = Mapper()
-        map.connect(self.service_path + '/delete/:id',
+        map.connect(self.service_path + '/annotation/delete/:id',
                 controller='annotation',
                 action='delete',
                 conditions=dict(method=['GET']))
-        map.connect(self.service_path + '/edit/:id',
+        map.connect(self.service_path + '/annotation/edit/:id',
                 controller='annotation',
                 action='edit',
                 conditions=dict(method=['GET']))
 
-        map.resource(self.service_path, self.service_path)
+        map.resource('annotation', 'annotation', path_prefix=self.service_path)
 
-        # map.resource assumes PUT for update but marginalias uses POST the
+        # map.resource assumes PUT for update but we want to use POST as well
         # exact mappings for REST seems a hotly contested matter see e.g.
         # http://www.megginson.com/blogs/quoderat/archives/2005/04/03/post-in-rest-create-update-or-action/
         # must have this *after* map.resource as otherwise overrides the create
         # action
-        map.connect(self.service_path + '/:id',
+        map.connect(self.service_path + '/annotation/:id',
                 controller='annotation',
                 action='update',
                 conditions=dict(method=['POST']))
@@ -98,33 +99,6 @@ class AnnotaterStore(object):
             self.start_response(status, response_headers)
             return ['Not found or method not allowed']
 
-
-    def _make_annotate_form(self, form_name, action_url, form_defaults):
-        from formencode import htmlfill
-        keys = [ 'url' , 'range', 'note' ]
-        vals = {}
-        for key in keys:
-            vals[key] = form_defaults.get(key, '')
-        formfields = ''
-        for key in keys:
-            formfields += \
-'''            <label for="%s">%s:</label><input name="%s" id="%s" /><br />
-''' % (key, key, key, key)
-            
-        form = \
-'''<html>
-    <head></head>
-    <body>
-        <form name="%s" action="%s" method="POST">
-           %s
-           <input type="submit" name="submission" value="send the form" />
-       </form>
-    </body>
-</html>''' % (form_name, action_url, formfields)
-        
-        form = htmlfill.render(form, vals)
-        return form
-
     def index(self):
         format = self.query_vals.get('format', 'html')
         status = '200 OK'
@@ -160,7 +134,7 @@ class AnnotaterStore(object):
                 note=note)
         model.Session.commit()
         status = '201 Created'
-        location = '/annotation/%s' % anno.id
+        location = '/%s/%s' % (self.service_path, anno.id)
         response_headers = [
                 ('Content-type', 'text/html'),
                 ('Location', location)
