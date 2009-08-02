@@ -48,4 +48,8 @@ and all the marginalia media files (with improvements).
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Topic :: Software Development :: Libraries :: Python Modules'],
+    entry_points='''
+    [paste.app_factory]
+    demo = annotater.demo:make_app
+    ''',
 )

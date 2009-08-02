@@ -1,16 +1,9 @@
 import os
 import wsgiref.util
 import logging
-def setup_logging():
-    level = logging.INFO
-    logger = logging.getLogger('annotater')
-    logger.setLevel(level)
-    log_file_path = 'annotater-debug.log'
-    fh = logging.FileHandler(log_file_path, 'w')
-    fh.setLevel(level)
-    logger.addHandler(fh)
-    return logger
-logger = setup_logging()
+logger = logging.getLogger('annotater')
+logging.basicConfig(level=logging.INFO, filename='annotater-debug.log',
+        filemode='w')
 logger.info('START LOGGING')
 
 import paste.request
@@ -28,10 +21,12 @@ service_path = '/annotation'
 
 # misc config
 this_directory = os.path.dirname(__file__)
-html_doc_path = os.path.join(this_directory, 'demo.html')
+html_doc_path = os.path.join(this_directory, '../demo/demo.html')
 
 # where we put the marginalia js
 media_mount_path = '/'
+# host where are running the app
+host = 'http://localhost:5000/'
 
 class AnnotaterDemo(object):
 
@@ -52,7 +47,6 @@ class AnnotaterDemo(object):
             response_headers = [('Content-type','text/html')]
             start_response(status, response_headers)
             out = file(html_doc_path).read()
-            host = 'http://localhost:8080/'
             # use the uri as the identifier
             uri = wsgiref.util.request_uri(environ)
             media = annotater.js.get_media_header(media_mount_path,
@@ -67,10 +61,13 @@ class AnnotaterDemo(object):
             out = out % values
             return [out]
 
+def make_app(global_config, **local_conf):
+    app = AnnotaterDemo()
+    return app
+
 
 if __name__ == '__main__': 
-    app = AnnotaterDemo()
+    app = make_app()
     import paste.httpserver
-    from annotater.js import *
     paste.httpserver.serve(app)
 
