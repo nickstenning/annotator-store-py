@@ -3,6 +3,7 @@ import shutil
 import tempfile
 import commands
 from StringIO import StringIO
+import json
 
 import annotater.model as model
 model.set_default_connection()
@@ -114,26 +115,12 @@ class TestAnnotaterStore(object):
         self.app = paste.fixture.TestApp(wsgiapp)
 
     # TODO: reinstate once json stuff is sorted out
-    def _test_0_annotate_index(self):
-        anno_id = self._create_annotation()
-        print anno_id
-        offset = self.map.generate(controller='annotation', action='index')
-        print offset
-        res = self.app.get(offset)
-        anno = model.Annotation.query.get(anno_id)
-        assert anno.url in res
-
-    def test_1_annotate_index_atom(self):
+    def test_0_annotate_index(self):
         anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='index')
-        offset += '?format=atom'
-        print offset
         res = self.app.get(offset)
         anno = model.Annotation.query.get(anno_id)
-        assert anno.note in res, res
-        assert anno.range in res
-        exp1 = '<feed xmlns:ptr="http://www.geof.net/code/annotation/"'
-        assert exp1 in res
+        assert anno.url in res, res
 
     def test_annotate_show(self):
         anno_id = self._create_annotation()
@@ -148,7 +135,9 @@ class TestAnnotaterStore(object):
         model.rebuilddb()
         offset = self.map.generate(controller='annotation', action='create')
         note = u'any old thing'
+        # TODO: test both
         params = {'note': note, 'url': 'http://localhost/'}
+        params = { 'json': json.dumps(params) }
         print offset
         res = self.app.post(offset, params)
         # TODO make this test more selective
@@ -157,6 +146,18 @@ class TestAnnotaterStore(object):
         assert len(items) == 1
         assert items[0].note == note
 
+    def test_annotate_update(self):
+        anno_id = self._create_annotation()
+        offset = self.map.generate(controller='annotation', action='update',
+                id=anno_id)
+        newnote = u'This is a NEW note, a NEW note I say.'
+        params = { 'note': newnote }
+        params = { 'json': json.dumps(params) }
+        self.app.post(offset, params)
+        model.Session.remove()
+        anno = model.Annotation.query.get(anno_id)
+        assert anno.note == newnote
+    
     def test_annotate_delete(self):
         anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='delete',
@@ -176,17 +177,6 @@ class TestAnnotaterStore(object):
         model.Session.remove()
         return anno_id
 
-    def test_annotate_update(self):
-        anno_id = self._create_annotation()
-        offset = self.map.generate(controller='annotation', action='update',
-                id=anno_id)
-        newnote = u'This is a NEW note, a NEW note I say.'
-        params = { 'note': newnote }
-        self.app.post(offset, params)
-        model.Session.remove()
-        anno = model.Annotation.query.get(anno_id)
-        assert anno.note == newnote
-    
     def test_not_found(self):
         offset = self.map.generate(controller='annotation')
         self.app.get(offset, '404')

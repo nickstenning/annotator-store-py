@@ -6,9 +6,12 @@ TODO:
 """
 import os
 import logging
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import paste.request
-
 from routes import *
 
 import annotater.model as model
@@ -18,7 +21,7 @@ logger = logging.getLogger('annotater')
 class AnnotaterStore(object):
     "Application to provide 'annotation' store."
 
-    DEBUG = True
+    DEBUG = False
 
     def __init__(self, service_path):
         """Create the WSGI application.
@@ -69,8 +72,8 @@ class AnnotaterStore(object):
             if isinstance(v, basestring):
                 self.query_vals[k] = unicode(v)
 
-        self.format = self.query_vals.get('format', 'atom')
-        if self.format not in ['atom']:
+        self.format = self.query_vals.get('format', 'json')
+        if self.format not in ['json']:
             status = '500 Internal server error'
             result = 'Unknown format: %s' % self.format
             response_headers = [ ('Content-type', 'text/plain'), ]
@@ -98,22 +101,26 @@ class AnnotaterStore(object):
             self._404()
             return ['Not found or method not allowed']
 
+    json_headers = [ ('Content-type', 'application/json') ]
+
     def _404(self):
         status = '404 Not Found'
         response_headers = [ ('Content-type', 'text/plain'), ]
         self.start_response(status, response_headers)
 
+    def _dump(self, _struct):
+        out = json.dumps(_struct)
+        return out.encode('utf8', 'ignore')
+
     def index(self):
         status = '200 OK'
         result = ''
-        if self.format == 'atom':
-            response_headers = [ ('Content-type', 'application/xml') ]
-            result = model.Annotation.list_annotations_atom()
-        else:
-            status = '500 Internal server error'
-            result = 'Unknown format: %s' % format
-        self.start_response(status, response_headers)
-        return [result]
+        response_headers = [ ('Content-type', 'application/xml') ]
+        result = []
+        for anno in model.Annotation.query.limit(100).all():
+            result.append(anno.as_dict())
+        self.start_response(status, self.json_headers)
+        return [self._dump(result)]
 
     def show(self):
         id = self.mapdict['id']
@@ -122,20 +129,17 @@ class AnnotaterStore(object):
             self._404()
             return ['Not found']
 
+        result = anno.as_dict()
         status = '200 OK'
-        if self.format == 'atom':
-            response_headers = [ ('Content-type', 'application/xml') ]
-            self.start_response(status, response_headers)
-            return [anno.as_atom().encode('utf8')]
+        self.start_response(status, self.json_headers)
+        return [self._dump(result)]
     
     def create(self):
-        url = self.query_vals.get('url')
-        range = self.query_vals.get('range', u'NO RANGE')
-        note = self.query_vals.get('note', u'NO NOTE')
-        anno = model.Annotation(
-                url=url,
-                range=range,
-                note=note)
+        if 'json' in self.query_vals:
+            params = json.loads(self.query_vals['json'])
+        else:
+            params = dict(self.query_vals)
+        anno = model.Annotation.from_dict(params)
         model.Session.commit()
         status = '201 Created'
         location = '/%s/%s' % (self.service_path, anno.id)
@@ -158,10 +162,12 @@ class AnnotaterStore(object):
             self.start_response(status, response_headers)
             msg = '<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
             return [msg]
-        new_values = dict(self.query_vals)
-        new_values['id'] = id
-        for k,v in new_values.items():
-            setattr(existing, k, v)
+        if 'json' in self.query_vals:
+            params = json.loads(self.query_vals['json'])
+        else:
+            params = dict(self.query_vals)
+        params['id'] = id
+        anno = model.Annotation.from_dict(params)
         model.Session.commit()
         status = '204 Updated'
         response_headers = []

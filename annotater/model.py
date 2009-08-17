@@ -8,7 +8,8 @@ logger = logging.getLogger('annotater')
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 # TODO: restrict imports ...
-from sqlalchemy import *
+from sqlalchemy.types import *
+from sqlalchemy import orm
 
 metadata = MetaData()
 
@@ -71,53 +72,29 @@ class Annotation(object):
     def __str__(self):
         out = u'%s %s %s' % (self.__class__.__name__, self.id, self.url)
         return out.encode('utf8', 'ignore')
-
-    def as_atom(self, raw=True):
-        tentry = ''
-        tentry += self._make_element('ptr:range', self.range)
-        # Annotation note as title
-        tnote = cgi.escape(self.note) 
-        tentry += self._make_element('title', tnote)
-        annotation_service = 'http://localhost:8080/annotation'
-        tentry += '<link rel="self" type="application/xml" href="%s/%s"/>\n' % ( annotation_service, self.id)
-        tentry += \
-'<link rel="related" type="text/html" title="%s" href="%s"/>\n' % (
-                'quote_title_not_available_yet',
-                cgi.escape(self.url, quote=True)
-                )
-        tentry = '<entry>\n%s\n</entry>' % tentry
-        return tentry
-
+    
+    def as_dict(self):
+        table = orm.class_mapper(self.__class__).mapped_table
+        out = {}
+        for col in table.c.keys():
+            out[col] = unicode(getattr(self, col))
+        return out
+    
     @classmethod
-    def _make_element(cls, name, value):
-        newelem = '<%s>%s</%s>\n' % (name, value, name)
-        return newelem
-
-    @classmethod
-    def list_annotations_atom(cls, url=u''):
-        query_results = cls.query.filter(cls.url.startswith(url))
-        # create the Atom by hand -- maybe in future we can use a library
-        def make_entries(results):
-            entries = ''
-            for item in results:
-                tentry = item.as_atom()
-                entries += tentry
-            return entries
-
-        atom = \
-u'''<?xml version="1.0" encoding="utf-8"?>
-<feed xmlns:ptr="http://www.geof.net/code/annotation/" xmlns="http://www.w3.org/2005/Atom" ptr:annotation-version="0.2">
-    %s
-    %s
-    %s
-    %s
-</feed>''' % (
-    cls._make_element('updated', datetime.now()),
-    cls._make_element('title', 'Annotations'),
-    cls._make_element('id', 'tag:%s' % datetime.now()),
-    make_entries(query_results)
-    )
-        return atom.encode('utf8')
+    def from_dict(cls, _dict):
+        # TODO: support case where id provided
+        id = _dict.get('id', None)
+        if id:
+            anno = Annotation.query.get(id)
+        else:
+            anno = Annotation()
+        url = _dict.get('url', None)
+        range = _dict.get('range', None)
+        note = _dict.get('note', None)
+        anno.url = url
+        anno.range = range
+        anno.note = note
+        return anno
 
 mapper(Annotation, annotation_table)
 

@@ -7,9 +7,10 @@ class TestAnnotation:
     @classmethod
     def setup_class(self):
         self.url = u'http://xyz.com'
+        self.range = u'31.0 32.5'
         anno = model.Annotation(
                 url=self.url,
-                range=u'31.0 32.5',
+                range=self.range,
                 note=u'It is a truth universally acknowledged',
                 )
         model.Session.commit()
@@ -26,15 +27,19 @@ class TestAnnotation:
         out = model.Annotation.query.get(self.anno_id)
         assert out.url == self.url
     
-    def test_1_list_annotations_atom(self):
+    def test_as_dict(self):
         anno = model.Annotation.query.get(self.anno_id)
-        out = model.Annotation.list_annotations_atom(self.url)
-        exp1 = '<feed xmlns:ptr="http://www.geof.net/code/annotation/"'
-        assert exp1 in out
-        exp2 = '<title>%s</title>' % anno.note
-        assert exp2 in out
-        exp3 = '<link rel="related" type="text/html" title="quote_title_not_available_yet" href="%s"/>' % anno.url
-        print out
-        assert exp3 in out
+        out = anno.as_dict()
+        assert out['url'] == self.url, out
+
+    def test_from_dict(self):
+        anno = model.Annotation.from_dict({'id': self.anno_id})
+        assert anno.url == self.url
+        assert anno.range == self.range
+
+    def test_from_dict(self):
+        newurl = u'xxxxxxx'
+        anno = model.Annotation.from_dict({'url': newurl})
+        assert anno.url == newurl
 
 

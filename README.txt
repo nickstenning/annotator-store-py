@@ -17,6 +17,11 @@ Get the annotater code and install it (using pip)::
     cd annotater
     pip -E ../pyenv install -e .
 
+NB: All dependencies should be installed automatically. However json support is
+requried. In python >= 2.6 this is part of the standard library (json) but if
+you have python <= 2.5 install you should install simplejson instead.
+
+
 Try out the demo (requires PasteScript):
 
     paster serve demo.ini
@@ -47,23 +52,28 @@ It can be mounted anywhere you like and provides a RESTful resource 'annotation'
 
 For example if you have mounted it at '/store' you would have:
 
+    GET /store/annotation # list annotation
     POST /store/annotation # create
     GET /store/annotation/id # get annotation
+    POST /store/annotation/id # update annotation
+    DELETE /store/annotation/id # delete annotation
 
-Attributes for these methods (in particular annotation
-values) may be provided either as individual query parameters
-or as as json payload (encoded in standard method in a
-parameters named json).
+Attributes for these methods (in particular annotation values) may be provided
+either as individual query parameters or as as json payload (encoded in
+standard way as argument to a parameter named json). Returned data will be json
+encoded.
 
 Annotations have the following attributes:
-  * uri: doc id
+
+  * url: doc id
   * note: text of annotation
   * range(s): list of range objects. Each range object has:
     * format: range format (defines syntax/semantics of start end)
     * start: xpath, offset (for default html format)
     * end: xpath, offset (for default html format)
-  * [optional] quote
-  * [optional] created
+  * [optional] quote (the quoted text -- or snippet thereof)
+  * [optional] created (datetime of creation)
+
 
 Changelog
 =========
