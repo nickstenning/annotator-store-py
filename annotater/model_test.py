@@ -26,12 +26,7 @@ class TestAnnotation:
         out = model.Annotation.query.get(self.anno_id)
         assert out.url == self.url
     
-    def test_1_list_annotations_html(self):
-        out = model.Annotation.list_annotations_html()
-        exp1 = "Annotation %s http://xyz.com" % self.anno_id
-        assert exp1 in out, out
-
-    def test_2_list_annotations_atom(self):
+    def test_1_list_annotations_atom(self):
         anno = model.Annotation.query.get(self.anno_id)
         out = model.Annotation.list_annotations_atom(self.url)
         exp1 = '<feed xmlns:ptr="http://www.geof.net/code/annotation/"'

@@ -63,19 +63,19 @@ class AnnotaterStore(object):
         self.path = environ['PATH_INFO']
         self.mapdict = self.map.match(self.path)
         action = self.mapdict['action']
-        # TODO: reinstate
-        # self.anno_schema = model.AnnotationSchema()
-        if action != 'delete':
-            self.query_vals = paste.request.parse_formvars(self.environ)
-            for k,v in self.query_vals.items():
-                # some reason we are not getting unicode back!
-                if isinstance(v, basestring):
-                    self.query_vals[k] = unicode(v)
-        else: 
-            # DELETE from js causes paste.request.parse_formvars to hang since
-            # we do not need it for delete if using clean urls just skip
-            # TODO: find out why this is and fix it.
-            self.query_vals = {}
+        self.query_vals = paste.request.parse_formvars(self.environ)
+        for k,v in self.query_vals.items():
+            # some reason we are not getting unicode back!
+            if isinstance(v, basestring):
+                self.query_vals[k] = unicode(v)
+
+        self.format = self.query_vals.get('format', 'atom')
+        if self.format not in ['atom']:
+            status = '500 Internal server error'
+            result = 'Unknown format: %s' % self.format
+            response_headers = [ ('Content-type', 'text/plain'), ]
+            self.start_response(status, response_headers)
+            return [str(result)]
 
         if self.DEBUG:
             logger.debug('** CALL TO ANNOTATE')
@@ -84,9 +84,10 @@ class AnnotaterStore(object):
             logger.debug('mapdict: %s' % self.mapdict)
             logger.debug('query_vals: %s' % self.query_vals)
 
-
         if action == 'index':
             return self.index()
+        elif action == 'show':
+            return self.show()
         elif action == 'create':
             return self.create()
         elif action == 'update':
@@ -94,28 +95,18 @@ class AnnotaterStore(object):
         elif action == 'delete':
             return self.delete()
         else:
-            status = '404 Not Found'
-            response_headers = [ ('Content-type', 'text/plain'), ]
-            self.start_response(status, response_headers)
+            self._404()
             return ['Not found or method not allowed']
 
+    def _404(self):
+        status = '404 Not Found'
+        response_headers = [ ('Content-type', 'text/plain'), ]
+        self.start_response(status, response_headers)
+
     def index(self):
-        format = self.query_vals.get('format', 'html')
         status = '200 OK'
-        response_headers = [ ('Content-type', 'text/html') ]
         result = ''
-        if format == 'html':
-            result = model.Annotation.list_annotations_html()
-            result = \
-'''<html>
-<head>
-    <title>Annotations</title>
-</head>
-<body>
-    %s
-</body>
-</html>''' % (result)
-        elif format == 'atom':
+        if self.format == 'atom':
             response_headers = [ ('Content-type', 'application/xml') ]
             result = model.Annotation.list_annotations_atom()
         else:
@@ -123,6 +114,19 @@ class AnnotaterStore(object):
             result = 'Unknown format: %s' % format
         self.start_response(status, response_headers)
         return [result]
+
+    def show(self):
+        id = self.mapdict['id']
+        anno = model.Annotation.query.get(id)
+        if not anno:
+            self._404()
+            return ['Not found']
+
+        status = '200 OK'
+        if self.format == 'atom':
+            response_headers = [ ('Content-type', 'application/xml') ]
+            self.start_response(status, response_headers)
+            return [anno.as_atom().encode('utf8')]
     
     def create(self):
         url = self.query_vals.get('url')

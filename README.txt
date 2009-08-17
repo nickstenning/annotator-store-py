@@ -65,6 +65,31 @@ Annotations have the following attributes:
   * [optional] quote
   * [optional] created
 
+Changelog
+=========
+
+v0.3 2009-??-??
+---------------
+
+  * RESTful interface is JSON-based by default
+  * Update to work with new jsannotate library
+
+v0.2 2009-07-26
+---------------
+
+  * Significant polishing 
+  * Convert backend store to use SQLAlchemy
+  * Load RESTful interface at an arbitrary url
+  * Last version to be based on marginalia
+
+v0.1 2007-04-01
+---------------
+
+  * Fully functioning web annotation using marginalia
+  * SQLObject based backend store
+  * WSGI RESTful interface to store
+  * WSGI app for mounting marginalia media (js, css etc)
+  * Demo app in demo/
 
 Copyright and License
 =====================

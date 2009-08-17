@@ -49,6 +49,9 @@ annotation_table = Table('annotation', metadata,
     Column('id', String(36), primary_key=True, default=lambda:
         str(uuid.uuid4())),
     Column('url', UnicodeText),
+    # json encoded object looking like
+    # format, start, end
+    # for default setup start = [element, offset]
     Column('range', UnicodeText),
     Column('note', UnicodeText),
     Column('quote', UnicodeText),
@@ -69,39 +72,35 @@ class Annotation(object):
         out = u'%s %s %s' % (self.__class__.__name__, self.id, self.url)
         return out.encode('utf8', 'ignore')
 
+    def as_atom(self, raw=True):
+        tentry = ''
+        tentry += self._make_element('ptr:range', self.range)
+        # Annotation note as title
+        tnote = cgi.escape(self.note) 
+        tentry += self._make_element('title', tnote)
+        annotation_service = 'http://localhost:8080/annotation'
+        tentry += '<link rel="self" type="application/xml" href="%s/%s"/>\n' % ( annotation_service, self.id)
+        tentry += \
+'<link rel="related" type="text/html" title="%s" href="%s"/>\n' % (
+                'quote_title_not_available_yet',
+                cgi.escape(self.url, quote=True)
+                )
+        tentry = '<entry>\n%s\n</entry>' % tentry
+        return tentry
+
     @classmethod
-    def list_annotations_html(cls, url=u''):
-        import cgi
-        query_results = cls.query.filter(cls.url.startswith(url))
-        out = ''
-        for item in query_results:
-            out += '<pre>%s</pre>' % cgi.escape(str(item)) + '\n\n'
-        return out
+    def _make_element(cls, name, value):
+        newelem = '<%s>%s</%s>\n' % (name, value, name)
+        return newelem
 
     @classmethod
     def list_annotations_atom(cls, url=u''):
         query_results = cls.query.filter(cls.url.startswith(url))
         # create the Atom by hand -- maybe in future we can use a library
-        ns_xhtml = '' 
-        annotation_service = 'http://localhost:8080/annotation'
-        def make_element(name, value):
-            newelem = '<%s>%s</%s>\n' % (name, value, name)
-            return newelem
         def make_entries(results):
             entries = ''
             for item in results:
-                tentry = ''
-                tentry += make_element('ptr:range', item.range)
-                # Annotation note as title
-                tnote = cgi.escape(item.note) 
-                tentry += make_element('title', tnote)
-                tentry += '<link rel="self" type="application/xml" href="%s/%s"/>\n' % ( annotation_service, item.id)
-                tentry += \
-'<link rel="related" type="text/html" title="%s" href="%s"/>\n' % (
-                        'quote_title_not_available_yet',
-                        cgi.escape(item.url, quote=True)
-                        )
-                tentry = '<entry>\n%s\n</entry>' % tentry
+                tentry = item.as_atom()
                 entries += tentry
             return entries
 
@@ -113,9 +112,9 @@ u'''<?xml version="1.0" encoding="utf-8"?>
     %s
     %s
 </feed>''' % (
-    make_element('updated', datetime.now()),
-    make_element('title', 'Annotations'),
-    make_element('id', 'tag:%s' % datetime.now()),
+    cls._make_element('updated', datetime.now()),
+    cls._make_element('title', 'Annotations'),
+    cls._make_element('id', 'tag:%s' % datetime.now()),
     make_entries(query_results)
     )
         return atom.encode('utf8')
