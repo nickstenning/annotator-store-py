@@ -10,8 +10,6 @@ logger.info('START LOGGING')
 import paste.request
 
 import annotater.model
-annotater.model.set_default_connection()
-annotater.model.createdb()
 import annotater.store
 import annotater.js
 
@@ -137,11 +135,16 @@ def make_media_app(mount_path, media_path, **kwargs):
 
 # dedicated function for use from paster
 def make_app(global_config, **local_conf):
+    dburi = local_conf['dburi']
+    annotater.model.set_default_connection(dburi)
+    annotater.model.createdb()
+
+    jsannotate_path = local_conf['jsannotate']
     # where we put the marginalia js
     media_mount_path = '/.jsannotate'
 
-    jsannotate_code = '/home/rgrp/hgroot/jsannotate/pkg/'
-    imgpath = '/home/rgrp/hgroot/jsannotate/img/'
+    jsannotate_code = os.path.join(jsannotate_path, 'pkg')
+    imgpath = os.path.join(jsannotate_path, 'img')
 
     import paste.urlmap
     demoapp = paste.urlmap.URLMap()

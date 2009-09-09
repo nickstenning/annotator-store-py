@@ -29,10 +29,13 @@ Session = scoped_session(sessionmaker(
 
 mapper = Session.mapper
 
-def set_default_connection():
-    cwd = os.getcwd()
-    path = os.path.join(cwd, 'testsqlite.db')
-    uri = 'sqlite:///%s' % path
+def set_default_connection(dburi=None):
+    if dburi:
+        uri = dburi
+    else:
+        cwd = os.getcwd()
+        path = os.path.join(cwd, 'testsqlite.db')
+        uri = 'sqlite:///%s' % path
     # uri = 'sqlite:///:memory:'
     engine = create_engine(uri, echo=False)
     metadata.bind = engine
