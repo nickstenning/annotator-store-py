@@ -14,11 +14,12 @@ setup(
     #    },
     install_requires = [
         'SQLAlchemy>=0.5',
-        'FormAlchemy>=1.0',
+        # 'FormAlchemy>=1.0',
         'Paste >= 1.0',
         'PasteDeploy',
-        'nose',
         'routes>=1.7',
+        # for tests
+        # 'nose',
         ],
     scripts = [],
 

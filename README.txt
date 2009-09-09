@@ -4,7 +4,7 @@ Introduction
 Annotater is a inline web annotation system designed for easy integration into
 web applications.
 
-It also providers its own web annoation service.
+It also providers its own web annotation service.
 
 
 Getting Started
@@ -21,6 +21,7 @@ NB: All dependencies should be installed automatically. However json support is
 requried. In python >= 2.6 this is part of the standard library (json) but if
 you have python <= 2.5 install you should install simplejson instead.
 
+You will also need sqlite and python db connector for it.
 
 Try out the demo (requires PasteScript):
 
@@ -38,7 +39,8 @@ Annotater is derived into 2 parts:
 plus storage (DB based).
 
 2. Frontend javascript that handles the user interface and can interact with
-the backend. This is currently provided in a separate repostiro
+the backend. This is currently provided as a separate package (jsannotate)
+though some integration in is done in this library.
 
 The two components are decoupled so each is usable on its own.
 

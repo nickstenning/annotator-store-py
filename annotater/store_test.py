@@ -3,7 +3,6 @@ import shutil
 import tempfile
 import commands
 from StringIO import StringIO
-import json
 
 import annotater.model as model
 model.set_default_connection()
@@ -114,7 +113,6 @@ class TestAnnotaterStore(object):
         self.map = wsgiapp.get_routes_mapper()
         self.app = paste.fixture.TestApp(wsgiapp)
 
-    # TODO: reinstate once json stuff is sorted out
     def test_0_annotate_index(self):
         anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='index')
@@ -128,35 +126,42 @@ class TestAnnotaterStore(object):
                 id=anno_id)
         res = self.app.get(offset)
         anno = model.Annotation.query.get(anno_id)
-        assert anno.note in res, res
+        assert anno.text in res, res
         assert anno.range in res, res
 
     def test_annotate_create(self):
         model.rebuilddb()
         offset = self.map.generate(controller='annotation', action='create')
-        note = u'any old thing'
-        # TODO: test both
-        params = {'note': note, 'url': 'http://localhost/'}
-        params = { 'json': json.dumps(params) }
+        text = u'any old thing'
+        inparams = {'text': text, 'url': 'http://localhost/',
+                'ranges': [{'start': 'p', 'end': 'p'}]
+                }
+        params = { 'json': model.json.dumps(inparams) }
         print offset
         res = self.app.post(offset, params)
         # TODO make this test more selective
         items = model.Annotation.query.all()
         items = list(items)
         assert len(items) == 1
-        assert items[0].note == note
+        assert items[0].text == text
+        assert items[0].range == inparams['ranges'][0]
+
+        # test posting a list
+        res = self.app.post(offset, {'json': model.json.dumps(3*[inparams])})
+        count = model.Annotation.query.count()
+        assert count == 4, count
 
     def test_annotate_update(self):
         anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='update',
                 id=anno_id)
-        newnote = u'This is a NEW note, a NEW note I say.'
-        params = { 'note': newnote }
-        params = { 'json': json.dumps(params) }
+        newtext = u'This is a NEW note, a NEW note I say.'
+        params = { 'text': newtext }
+        params = { 'json': model.json.dumps(params) }
         self.app.post(offset, params)
         model.Session.remove()
         anno = model.Annotation.query.get(anno_id)
-        assert anno.note == newnote
+        assert anno.text == newtext
     
     def test_annotate_delete(self):
         anno_id = self._create_annotation()
@@ -170,7 +175,7 @@ class TestAnnotaterStore(object):
         anno = model.Annotation(
                 url=u'http://xyz.com',
                 range=u'1.0 2.0',
-                note=u'blah note',
+                text=u'blah text',
                 )
         model.Session.commit()
         anno_id = anno.id

@@ -2,6 +2,10 @@ import os
 import uuid
 from datetime import datetime
 import cgi
+try:
+    import json
+except ImportError:
+    import simplejson as json
 import logging
 logger = logging.getLogger('annotater')
 
@@ -46,15 +50,37 @@ def rebuilddb():
     cleandb()
     createdb()
 
+class JsonType(TypeDecorator):
+    '''Store data as JSON serializing on save and unserializing on use.
+    '''
+    impl = UnicodeText
+
+    def process_bind_param(self, value, engine):
+        if value is None or value == {}: # ensure we stores nulls in db not json "null"
+            return None
+        else:
+            # ensure_ascii=False => allow unicode but still need to convert
+            return unicode(json.dumps(value, ensure_ascii=False))
+
+    def process_result_value(self, value, engine):
+        if value is None:
+            return None
+        else:
+            return json.loads(value)
+
+    def copy(self):
+        return JsonType(self.impl.length)
+
+
 annotation_table = Table('annotation', metadata,
-    Column('id', String(36), primary_key=True, default=lambda:
-        str(uuid.uuid4())),
+    Column('id', Unicode(36), primary_key=True, default=lambda:
+        unicode(uuid.uuid4())),
     Column('url', UnicodeText),
     # json encoded object looking like
     # format, start, end
     # for default setup start = [element, offset]
-    Column('range', UnicodeText),
-    Column('note', UnicodeText),
+    Column('range', JsonType),
+    Column('text', UnicodeText),
     Column('quote', UnicodeText),
     Column('created', DateTime, default=datetime.now),
     )
@@ -77,7 +103,12 @@ class Annotation(object):
         table = orm.class_mapper(self.__class__).mapped_table
         out = {}
         for col in table.c.keys():
-            out[col] = unicode(getattr(self, col))
+            val = getattr(self, col)
+            if isinstance(val, datetime):
+                val = unicode(val)
+            out[col] = val
+        # add ranges back in for jsannotate compatibility
+        out['ranges'] = [ self.range ] if self.range else []
         return out
     
     @classmethod
@@ -88,12 +119,12 @@ class Annotation(object):
             anno = Annotation.query.get(id)
         else:
             anno = Annotation()
-        url = _dict.get('url', None)
-        range = _dict.get('range', None)
-        note = _dict.get('note', None)
-        anno.url = url
-        anno.range = range
-        anno.note = note
+        for key in [ 'url', 'text', 'range' ]:
+            if key in _dict:
+                setattr(anno, key, _dict[key])
+        # TODO: decide whether we have range or ranges
+        if 'ranges' in _dict and _dict['ranges']: 
+            anno.range = _dict['ranges'][0]
         return anno
 
 mapper(Annotation, annotation_table)

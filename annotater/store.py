@@ -23,12 +23,12 @@ class AnnotaterStore(object):
 
     DEBUG = False
 
-    def __init__(self, service_path):
+    def __init__(self, service_path=''):
         """Create the WSGI application.
 
         @param service_path: offset url where this application is mounted.
         """
-        if not service_path.startswith('/'):
+        if service_path and not service_path.startswith('/'):
             service_path = '/' + service_path
         self.service_path = service_path
 
@@ -139,7 +139,11 @@ class AnnotaterStore(object):
             params = json.loads(self.query_vals['json'])
         else:
             params = dict(self.query_vals)
-        anno = model.Annotation.from_dict(params)
+        if isinstance(params, list):
+            for objdict in params:
+                anno = model.Annotation.from_dict(objdict)
+        else:
+            anno = model.Annotation.from_dict(params)
         model.Session.commit()
         status = '201 Created'
         location = '/%s/%s' % (self.service_path, anno.id)
