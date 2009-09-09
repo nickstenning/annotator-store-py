@@ -3,9 +3,10 @@ import re
 import wsgiref.util
 import logging
 logger = logging.getLogger('annotater')
-logging.basicConfig(level=logging.INFO, filename='annotater-debug.log',
-        filemode='w')
-logger.info('START LOGGING')
+logging.basicConfig(level=logging.INFO,
+        # filename='annotater-debug.log',
+        # filemode='w'
+        )
 
 import paste.request
 
