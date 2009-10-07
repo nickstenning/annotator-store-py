@@ -1,17 +1,11 @@
 from setuptools import setup, find_packages
 
-from annotater import __version__, __license__, __author__
+from annotator import __version__, __license__, __author__
 
 setup(
-    name = 'annotater',
+    name = 'annotator',
     version = __version__,
     packages = find_packages(),
-    # WARNING: package_data is broken for sdist
-    # see
-    # http://mail.python.org/pipermail/distutils-sig/2007-February/007216.html
-    # package_data = {
-    #    'annotater.marginalia' : ['*.js', '*.css', 'lang/*' ],
-    #    },
     install_requires = [
         'SQLAlchemy>=0.5',
         # 'FormAlchemy>=1.0',
@@ -38,8 +32,8 @@ and all the marginalia media files (with improvements).
 """,
     license = __license__,
     keywords = 'annotation web javascript',
-    url = 'http://p.knowledgeforge.net/shakespeare/svn/annotater/', 
-    download_url = 'http://p.knowledgeforge.net/shakespeare/svn/annotater/trunk',
+    url = 'http://knowledgeforge.net/okfn/annotator/', 
+    download_url = 'http://knowledgeforge.net/okfn/annotator/',
     zip_safe=False,
     classifiers = [
         'Development Status :: 3 - Alpha',
@@ -51,6 +45,6 @@ and all the marginalia media files (with improvements).
         'Topic :: Software Development :: Libraries :: Python Modules'],
     entry_points='''
     [paste.app_factory]
-    demo = annotater.demo:make_app
+    demo = annotator.demo:make_app
     ''',
 )

@@ -13,8 +13,8 @@ Getting Started
 Get the annotator code and install it (using pip)::
 
     # check out the mercurial repo
-    hg clone https://knowledgeforge.net/okfn/annotater
-    cd annotater
+    hg clone https://knowledgeforge.net/okfn/annotator
+    cd annotator
     pip -E ../pyenv install -e .
 
 NB: All dependencies should be installed automatically. However json support is
