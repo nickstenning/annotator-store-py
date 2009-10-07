@@ -2,7 +2,7 @@
 
 TODO:
 
-1. Move to templates for annotater store forms (?)
+1. Move to templates for annotator store forms (?)
 """
 import os
 import logging
@@ -14,11 +14,11 @@ except ImportError:
 import paste.request
 from routes import *
 
-import annotater.model as model
+import annotator.model as model
 
-logger = logging.getLogger('annotater')
+logger = logging.getLogger('annotator')
 
-class AnnotaterStore(object):
+class AnnotatorStore(object):
     "Application to provide 'annotation' store."
 
     DEBUG = False

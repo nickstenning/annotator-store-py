@@ -3,9 +3,9 @@
 import os
 
 '''
-config for JS Annotater:
+config for JS Annotator:
     * document uri
-    * where server annotater api is located
+    * where server annotator api is located
     * user info?
 '''
 
@@ -45,7 +45,7 @@ def get_media_header(media_url_base, server_api, document_uri):
     return html_header
 
 
-class AnnotaterMedia(object):
+class AnnotatorMedia(object):
     """WSGI App to make available the media (js+css) files needed for
     marginalia javascript annotation to work.
     """

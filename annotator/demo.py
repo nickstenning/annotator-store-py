@@ -2,20 +2,20 @@ import os
 import re
 import wsgiref.util
 import logging
-logger = logging.getLogger('annotater')
-logging.basicConfig(level=logging.INFO, filename='annotater-debug.log',
+logger = logging.getLogger('annotator')
+logging.basicConfig(level=logging.INFO, filename='annotator-debug.log',
         filemode='w')
 logger.info('START LOGGING')
 
 import paste.request
 
-import annotater.model
-import annotater.store
-import annotater.js
+import annotator.model
+import annotator.store
+import annotator.js
 
 # Put this here because we use in html_doc
 # Offset url to annotation store 
-server_api = '/.annotater_api'
+server_api = '/.annotator_api'
 
 html_doc = '''
 <html>
@@ -46,7 +46,7 @@ html_doc = '''
 ''' % server_api
 
 # TODO: turn this into middleware
-class AnnotaterDemo(object):
+class AnnotatorDemo(object):
     head_media = '''
     <script src="%(media_url)s/jsannotate.min.js"></script>
     <link rel="stylesheet" type="text/css" href="%(media_url)s/jsannotate.min.css">
@@ -136,8 +136,8 @@ def make_media_app(mount_path, media_path, **kwargs):
 # dedicated function for use from paster
 def make_app(global_config, **local_conf):
     dburi = local_conf['dburi']
-    annotater.model.set_default_connection(dburi)
-    annotater.model.createdb()
+    annotator.model.set_default_connection(dburi)
+    annotator.model.createdb()
 
     jsannotate_path = local_conf['jsannotate']
     # where we put the marginalia js
@@ -148,14 +148,14 @@ def make_app(global_config, **local_conf):
 
     import paste.urlmap
     demoapp = paste.urlmap.URLMap()
-    demoapp['/'] = AnnotaterDemo(media_mount_path, server_api, jsannotate_code)
+    demoapp['/'] = AnnotatorDemo(media_mount_path, server_api, jsannotate_code)
     demoapp[media_mount_path] = make_media_app(media_mount_path,
             jsannotate_code)
     # should be inside media app but isn't yet
     demoapp['/img'] = paste.urlparser.StaticURLParser(imgpath)
 
     # we don't need to mount store anywhere since urlmap will strip off prefix
-    demoapp[server_api] = annotater.store.AnnotaterStore()
+    demoapp[server_api] = annotator.store.AnnotatorStore()
 
     return demoapp
 

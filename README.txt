@@ -1,7 +1,7 @@
 Introduction
 ============
 
-Annotater is a inline web annotation system designed for easy integration into
+Annotator is a inline web annotation system designed for easy integration into
 web applications.
 
 It also providers its own web annotation service.
@@ -10,7 +10,7 @@ It also providers its own web annotation service.
 Getting Started
 ===============
 
-Get the annotater code and install it (using pip)::
+Get the annotator code and install it (using pip)::
 
     # check out the mercurial repo
     hg clone https://knowledgeforge.net/okfn/annotater
@@ -33,7 +33,7 @@ Visit http://localhost:5000/
 Technical Information
 =====================
 
-Annotater is derived into 2 parts:
+Annotator is derived into 2 parts:
 
 1. A generic backend for storing annotations consisting of a RESTful interface
 plus storage (DB based).
@@ -48,7 +48,7 @@ The two components are decoupled so each is usable on its own.
 Specification of the Annotation Store
 -------------------------------------
 
-The RESTful interface is provided by the WSGI application in annotater/store.py.
+The RESTful interface is provided by the WSGI application in annotator/store.py.
 
 It can be mounted anywhere you like and provides a RESTful resource 'annotation'.
 
@@ -80,11 +80,16 @@ Annotations have the following attributes:
 Changelog
 =========
 
-v0.3 2009-??-??
+v0.3 2009-10-??
 ---------------
 
+Major release:
+
   * RESTful interface is JSON-based by default
-  * Update to work with new jsannotate library
+  * Much improved demo with WSGI middleware
+  * Switch from existing marginalia js library to new jsannotate library
+  * Rename from annotater to annotator
+  * Simplify and refactor code throughout
 
 v0.2 2009-07-26
 ---------------

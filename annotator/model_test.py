@@ -1,4 +1,4 @@
-import annotater.model as model
+import annotator.model as model
 model.set_default_connection()
 model.rebuilddb()
 
