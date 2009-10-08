@@ -7,7 +7,7 @@ try:
 except ImportError:
     import simplejson as json
 import logging
-logger = logging.getLogger('annotater')
+logger = logging.getLogger('annotator')
 
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey

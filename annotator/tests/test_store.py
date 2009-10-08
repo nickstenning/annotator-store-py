@@ -4,15 +4,15 @@ import tempfile
 import commands
 from StringIO import StringIO
 
-import annotater.model as model
+import annotator.model as model
 model.set_default_connection()
 model.createdb()
-import annotater.store
+import annotator.store
 
 class TestMapper:
 
     service_path = '/.annotation-xyz'
-    store = annotater.store.AnnotaterStore(service_path=service_path)
+    store = annotator.store.AnnotatorStore(service_path=service_path)
     map = store.get_routes_mapper()
 
     def test_match_double_slash(self):
@@ -103,13 +103,13 @@ class TestMapper:
         assert offset == exp, (offset, exp)
 
 
-class TestAnnotaterStore(object):
+class TestAnnotatorStore(object):
 
     def __init__(self, *args, **kwargs):
         # from paste.deploy import loadapp
         # wsgiapp = loadapp('config:test.ini', relative_to=conf_dir)
         import paste.fixture
-        wsgiapp = annotater.store.AnnotaterStore(service_path='/annotation-xyz')
+        wsgiapp = annotator.store.AnnotatorStore(service_path='/annotation-xyz')
         self.map = wsgiapp.get_routes_mapper()
         self.app = paste.fixture.TestApp(wsgiapp)
 
