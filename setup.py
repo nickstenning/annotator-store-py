@@ -7,11 +7,12 @@ setup(
     version = __version__,
     packages = find_packages(),
     install_requires = [
-        'SQLAlchemy>=0.5',
+        'SQLAlchemy>=0.4.8',
         # 'FormAlchemy>=1.0',
         'Paste >= 1.0',
         'PasteDeploy',
         'routes>=1.7',
+        'wsgifilter>=0.2'
         # for tests
         # 'nose',
         ],
