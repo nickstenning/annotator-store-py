@@ -13,6 +13,7 @@ except ImportError:
 
 import paste.request
 from routes import *
+import webob
 
 import annotator.model as model
 
@@ -20,8 +21,6 @@ logger = logging.getLogger('annotator')
 
 class AnnotatorStore(object):
     "Application to provide 'annotation' store."
-
-    DEBUG = False
 
     def __init__(self, service_path=''):
         """Create the WSGI application.
@@ -36,6 +35,7 @@ class AnnotatorStore(object):
         # some extra additions to standard layout from map.resource
         # help to make the url layout a bit nicer for those using the web ui
         map = Mapper()
+        map.connect(self.service_path + 'debug', controller='annotation', action='debug')
         map.connect(self.service_path + '/annotation/delete/:id',
                 controller='annotation',
                 action='delete',
@@ -60,67 +60,54 @@ class AnnotatorStore(object):
 
     def __call__(self, environ, start_response):
         self.environ = environ
+        self.start_response = start_response
         self.map = self.get_routes_mapper()
         self.map.environ = environ
-        self.start_response = start_response
-        self.path = environ['PATH_INFO']
-        self.mapdict = self.map.match(self.path)
-        action = self.mapdict['action']
-        self.query_vals = paste.request.parse_formvars(self.environ)
-        for k,v in self.query_vals.items():
-            # some reason we are not getting unicode back!
-            if isinstance(v, basestring):
-                self.query_vals[k] = unicode(v)
+        path = environ['PATH_INFO']
+        self.mapdict = self.map.match(path)
+        self.request = webob.Request(environ)
 
-        self.format = self.query_vals.get('format', 'json')
+        self.response = webob.Response(charset='utf8')
+        self.format = self.request.params.get('format', 'json')
         if self.format not in ['json']:
-            status = '500 Internal server error'
-            result = 'Unknown format: %s' % self.format
-            response_headers = [ ('Content-type', 'text/plain'), ]
-            self.start_response(status, response_headers)
-            return [str(result)]
+            self.response.status = 500
+            self.response.body = 'Unknown format: %s' % self.format
+            return self.response(environ, start_response)
 
-        if self.DEBUG:
-            logger.debug('** CALL TO ANNOTATE')
-            logger.debug('path: %s' % self.path)
-            logger.debug('environ: %s' % environ)
-            logger.debug('mapdict: %s' % self.mapdict)
-            logger.debug('query_vals: %s' % self.query_vals)
-
-        if action == 'index':
-            return self.index()
-        elif action == 'show':
-            return self.show()
-        elif action == 'create':
-            return self.create()
-        elif action == 'update':
-            return self.update()
-        elif action == 'delete':
-            return self.delete()
+        if self.mapdict is not None:
+            action = self.mapdict['action']
+            method = getattr(self, action)
+            out = method()
+            if out is not None:
+                self.response.unicode_body = out
+            if self.response.status_int == 204:
+                del self.response.headers['content-type']
         else:
             self._404()
-            return ['Not found or method not allowed']
+        return self.response(environ, start_response)
 
-    json_headers = [ ('Content-type', 'application/json') ]
+    def _set_json_header(self):
+        self.response.content_type = 'application/json'
 
     def _404(self):
-        status = '404 Not Found'
-        response_headers = [ ('Content-type', 'text/plain'), ]
-        self.start_response(status, response_headers)
+        self.response.status = 404
+        self.response.body = 'Not found'
 
     def _dump(self, _struct):
         out = json.dumps(_struct)
-        return out.encode('utf8', 'ignore')
+        # return out.encode('utf8', 'ignore')
+        return unicode(out)
+
+    def debug(self):
+        self.response.content_type = 'text/plain'
+        return self.request.params.items()
 
     def index(self):
-        status = '200 OK'
-        result = ''
-        response_headers = [ ('Content-type', 'application/xml') ]
         result = []
         for anno in model.Annotation.query.limit(100).all():
             result.append(anno.as_dict())
-        self.start_response(status, self.json_headers)
-        return [self._dump(result)]
+        self._set_json_header()
+        return self._dump(result)
 
     def show(self):
         id = self.mapdict['id']
@@ -128,31 +115,25 @@ class AnnotatorStore(object):
         if not anno:
             self._404()
             return ['Not found']
-
+        self._set_json_header()
         result = anno.as_dict()
-        status = '200 OK'
-        self.start_response(status, self.json_headers)
-        return [self._dump(result)]
+        return self._dump(result)
     
     def create(self):
-        if 'json' in self.query_vals:
-            params = json.loads(self.query_vals['json'])
+        if 'json' in self.request.params:
+            params = json.loads(self.request.params['json'])
         else:
-            params = dict(self.query_vals)
+            params = dict(self.request.params)
         if isinstance(params, list):
             for objdict in params:
                 anno = model.Annotation.from_dict(objdict)
         else:
             anno = model.Annotation.from_dict(params)
         model.Session.commit()
-        status = '201 Created'
+        self.response.status = 201
         location = '/%s/%s' % (self.service_path, anno.id)
-        response_headers = [
-                ('Content-type', 'text/html'),
-                ('Location', location)
-                ]
-        self.start_response(status, response_headers)
-        return ['']
+        self.response.headers['location'] = location
+        return u''
 
     def update(self):
         id = self.mapdict['id']
@@ -160,42 +141,30 @@ class AnnotatorStore(object):
             existing = model.Annotation.query.get(id)
         except:
             status = '400 Bad Request'
-            response_headers = [
-                ('Content-type', 'text/html'),
-                ]
-            self.start_response(status, response_headers)
-            msg = '<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
-            return [msg]
-        if 'json' in self.query_vals:
-            params = json.loads(self.query_vals['json'])
+            self.response.status = 400
+            msg = u'<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
+            return msg
+        if 'json' in self.request.params:
+            params = json.loads(self.request.params['json'])
         else:
-            params = dict(self.query_vals)
+            params = dict(self.request.params)
         params['id'] = id
         anno = model.Annotation.from_dict(params)
         model.Session.commit()
-        status = '204 Updated'
-        response_headers = []
-        self.start_response(status, response_headers)
-        return ['']
+        self.response.status = 204
+        return None
 
     def delete(self):
         id = self.mapdict['id']
-        response_headers = [ ('Content-type', 'text/html'), ]
         if id is None:
-            status = '400 Bad Request'
-            response_headers = [ ('Content-type', 'text/html'), ]
-            self.start_response(status, response_headers)
-            return ['<h1>400 Bad Request</h1><p>Bad ID</p>']
+            self.response.status = 400
+            return u'<h1>400 Bad Request</h1><p>Bad ID</p>'
         else:
-            status = '204 Deleted'
+            self.response.status = 204 # deleted
             try:
                 model.Annotation.delete(id)
-                response_headers = [ ]
-                self.start_response(status, response_headers)
-                return []
+                return None
             except Exception, inst:
-                status = '500 Internal server error'
-                self.start_response(status, response_headers)
-                return ['<h1>500 Internal Server Error</h1>Delete failed\n %s'%
-                        inst]
+                self.response.status = 500
+                return u'<h1>500 Internal Server Error</h1>Delete failed\n %s'% inst
     

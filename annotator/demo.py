@@ -66,9 +66,9 @@ class AnnotatorDemo(object):
         return self.html_tmpl % content
     
     def annotate(self):
-        import paste.request
-        params = paste.request.parse_formvars(self.environ)
-        text = params.get('text', '')
+        import webob
+        req = webob.Request(self.environ)
+        text = req.params.get('text', '')
         if text:
             content = '''<pre>%s</pre>''' % text
             import annotator.middleware
