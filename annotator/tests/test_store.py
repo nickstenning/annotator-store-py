@@ -5,8 +5,6 @@ import commands
 from StringIO import StringIO
 
 import annotator.model as model
-model.set_default_connection()
-model.createdb()
 import annotator.store
 
 class TestMapper:
@@ -130,7 +128,7 @@ class TestAnnotatorStore(object):
         assert anno.range in res, res
 
     def test_annotate_create(self):
-        model.rebuilddb()
+        model.repo.rebuilddb()
         offset = self.map.generate(controller='annotation', action='create')
         text = u'any old thing'
         inparams = {'text': text, 'url': 'http://localhost/',

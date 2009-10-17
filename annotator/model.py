@@ -1,3 +1,8 @@
+'''Annotation domain model.
+
+If you are using this as a library you will want to use just the
+make_annotation_table method and the Annotation object.
+'''
 import os
 import uuid
 from datetime import datetime
@@ -10,51 +15,14 @@ import logging
 logger = logging.getLogger('annotator')
 
 from sqlalchemy import create_engine
-from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
-# TODO: restrict imports ...
+from sqlalchemy import Table, Column
 from sqlalchemy.types import *
-from sqlalchemy import orm
+from sqlalchemy.orm import relation, backref, class_mapper
 
-metadata = MetaData()
-
-from sqlalchemy.orm import scoped_session, sessionmaker, create_session
-from sqlalchemy.orm import relation, backref
-# both options now work
-# Session = scoped_session(sessionmaker(autoflush=False, transactional=True))
-# this is the more testing one ...
-Session = scoped_session(sessionmaker(
-    autoflush=True,
-    autocommit=False,
-    ))
-
-mapper = Session.mapper
-
-def set_default_connection(dburi=None):
-    if dburi:
-        uri = dburi
-    else:
-        cwd = os.getcwd()
-        path = os.path.join(cwd, 'testsqlite.db')
-        uri = 'sqlite:///%s' % path
-    # uri = 'sqlite:///:memory:'
-    engine = create_engine(uri, echo=False)
-    metadata.bind = engine
-    Session.bind = engine
-
-def createdb():
-    logger.info('Creating db')
-    metadata.create_all()
-
-def cleandb():
-    metadata.drop_all()
-    logger.info('Cleaned db')
-
-def rebuilddb():
-    cleandb()
-    createdb()
 
 class JsonType(TypeDecorator):
-    '''Store data as JSON serializing on save and unserializing on use.
+    '''Custom SQLAlchemy type for JSON data (serializing on save and
+    unserializing on use).
     '''
     impl = UnicodeText
 
@@ -75,18 +43,20 @@ class JsonType(TypeDecorator):
         return JsonType(self.impl.length)
 
 
-annotation_table = Table('annotation', metadata,
-    Column('id', Unicode(36), primary_key=True, default=lambda:
-        unicode(uuid.uuid4())),
-    Column('url', UnicodeText),
-    # json encoded object looking like
-    # format, start, end
-    # for default setup start = [element, offset]
-    Column('range', JsonType),
-    Column('text', UnicodeText),
-    Column('quote', UnicodeText),
-    Column('created', DateTime, default=datetime.now),
-    )
+def make_annotation_table(metadata):
+    annotation_table = Table('annotation', metadata,
+        Column('id', Unicode(36), primary_key=True, default=lambda:
+            unicode(uuid.uuid4())),
+        Column('url', UnicodeText),
+        # json encoded object looking like
+        # format, start, end
+        # for default setup start = [element, offset]
+        Column('range', JsonType),
+        Column('text', UnicodeText),
+        Column('quote', UnicodeText),
+        Column('created', DateTime, default=datetime.now),
+        )
+    return annotation_table
 
 
 class Annotation(object):
@@ -103,7 +73,7 @@ class Annotation(object):
         return out.encode('utf8', 'ignore')
     
     def as_dict(self):
-        table = orm.class_mapper(self.__class__).mapped_table
+        table = class_mapper(self.__class__).mapped_table
         out = {}
         for col in table.c.keys():
             val = getattr(self, col)
@@ -130,5 +100,46 @@ class Annotation(object):
             anno.range = _dict['ranges'][0]
         return anno
 
-mapper(Annotation, annotation_table)
+def map_annotation_object(mapper, annotation_table):
+    mapper(Annotation, annotation_table)
 
+
+from sqlalchemy.orm import scoped_session, sessionmaker, create_session
+Session = scoped_session(sessionmaker(
+    autoflush=True,
+    autocommit=False,
+    ))
+class Repository(object):
+
+    def configure(self, dburi):
+        from sqlalchemy import MetaData
+
+        engine = create_engine(dburi, echo=False)
+
+        self.metadata = MetaData()
+        self.metadata.bind = engine
+        Session.bind = engine
+        mapper = Session.mapper
+
+        anno_table = make_annotation_table(self.metadata)
+        map_annotation_object(mapper, anno_table)
+
+#         def set_default_connection(dburi=None):
+#                 cwd = os.getcwd()
+#                 path = os.path.join(cwd, 'testsqlite.db')
+#                 uri = 'sqlite:///%s' % path
+#             # uri = 'sqlite:///:memory:'
+
+    def createdb(self):
+        logger.info('Creating db')
+        self.metadata.create_all()
+
+    def cleandb(self):
+        self.metadata.drop_all()
+        logger.info('Cleaned db')
+
+    def rebuilddb(self):
+        self.cleandb()
+        self.createdb()
+
+repo = Repository()

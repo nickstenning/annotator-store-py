@@ -93,7 +93,7 @@ def make_media_app(mount_path, media_path, **kwargs):
 # dedicated function for use from paster
 def make_app(global_config, **local_conf):
     dburi = local_conf['dburi']
-    annotator.model.set_default_connection(dburi)
+    annotator.model.repo.configure(dburi)
     annotator.model.createdb()
 
     jsannotate_path = local_conf['jsannotate']

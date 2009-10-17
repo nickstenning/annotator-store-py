@@ -1,6 +1,5 @@
 import annotator.model as model
-model.set_default_connection()
-model.rebuilddb()
+model.repo.rebuilddb()
 
 class TestAnnotation:
 

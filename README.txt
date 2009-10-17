@@ -89,6 +89,7 @@ Major release:
   * Much improved demo with WSGI middleware
   * Switch from existing marginalia js library to new jsannotate library
   * Rename from annotater to annotator
+  * Make model code easily reusable inside another project
   * Simplify and refactor code throughout
 
 v0.2 2009-07-26
