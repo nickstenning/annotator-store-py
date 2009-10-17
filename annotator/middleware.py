@@ -17,15 +17,16 @@ class JsAnnotateMiddleware(wsgifilter.filter.Filter):
     <link rel="stylesheet" type="text/css" href="%(media_url)s/annotator.min.css">
     '''
 
-    body_script = '''
+    body_script_tmpl = '''
     <script>
-//      jQuery(function () {
-//        // TODO: JSAnnotate.config
-//        // configure with docid (if not already defined ...)
-//        var rest_api = '%(server_api)s';
-//        var rest_annotation = rest_api + '/annotation';
-//        window.jsannotator = new Annotator();
-//     });
+        jQuery(function() {
+          var annotator_prefix = '%s';
+          // an identifier for the document
+          var annotator_doc_uri = '%s';
+          $('#text-to-annotate').annotator();
+          $('#text-to-annotate').annotationStore({'prefix': annotator_prefix, 'uri':
+          annotator_doc_uri});
+        });
     </script>
     '''
 
@@ -43,10 +44,13 @@ class JsAnnotateMiddleware(wsgifilter.filter.Filter):
     def filter(self, environ, headers, data):
         return self.modify_html(data)
 
-    def modify_html(self, html_doc):
+    def body_script(self, doc_uri):
+        return self.body_script_tmpl % (self.server_api + 'annotation', doc_uri)
+
+    def modify_html(self, html_doc, doc_uri=None):
         head_media = self.head_media % { 'media_url': self.media_mount_path }
         out = self.add_to_head(html_doc, head_media)
-        out = self.add_to_end_of_body(out, self.body_script % { 'server_api': self.server_api})
+        out = self.add_to_end_of_body(out, self.body_script(doc_uri))
         return out
 
     _end_head_re = re.compile(r'</head.*?>', re.I|re.S)

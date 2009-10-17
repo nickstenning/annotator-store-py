@@ -38,9 +38,14 @@ class TestJsAnnotateMiddleware:
         res = self.app.get('/')
         assert 'annotator.min.js' in res, res
 
-    def test_body_script(self):
+    def test_body_script_1(self):
+        docuri = 'made-up-doc-uri'
+        body_script = self.wsgiapp.body_script(docuri)
+        assert docuri in body_script
+
+    def test_body_script_2(self):
         res = self.app.get('/')
-        body_script = self.wsgiapp.body_script % {'server_api':
-                self.server_path }
+        docuri = None
+        body_script = self.wsgiapp.body_script(docuri)
         assert body_script in res, res
     
