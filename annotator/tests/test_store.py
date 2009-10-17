@@ -40,6 +40,10 @@ class TestMapper:
         out = self.map.match('%s/annotation' % self.service_path)
         assert out['action'] == 'create'
 
+        self.map.environ = { 'REQUEST_METHOD' : 'PUT' }
+        out = self.map.match('%s/annotation' % self.service_path)
+        assert out['action'] == 'create'
+
     def test_match_delete(self):
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
         out = self.map.match('%s/annotation/delete/1' % self.service_path)
@@ -136,18 +140,20 @@ class TestAnnotatorStore(object):
                 }
         params = { 'json': model.json.dumps(inparams) }
         print offset
+        # test both put and post
         res = self.app.post(offset, params)
+        res = self.app.put(offset, params)
         # TODO make this test more selective
         items = model.Annotation.query.all()
         items = list(items)
-        assert len(items) == 1
+        assert len(items) == 2, len(items)
         assert items[0].text == text
         assert items[0].range == inparams['ranges'][0]
 
         # test posting a list
         res = self.app.post(offset, {'json': model.json.dumps(3*[inparams])})
         count = model.Annotation.query.count()
-        assert count == 4, count
+        assert count == 5, count
 
     def test_annotate_update(self):
         anno_id = self._create_annotation()

@@ -45,6 +45,12 @@ class AnnotatorStore(object):
                 action='edit',
                 conditions=dict(method=['GET']))
 
+        # PUT does not seem connected to create by default
+        map.connect(self.service_path + '/annotation',
+                controller='annotation',
+                action='create',
+                conditions=dict(method=['PUT', 'POST']))
+
         map.resource('annotation', 'annotation', path_prefix=self.service_path)
 
         # map.resource assumes PUT for update but we want to use POST as well
@@ -129,7 +135,8 @@ class AnnotatorStore(object):
                 anno = model.Annotation.from_dict(objdict)
         else:
             anno = model.Annotation.from_dict(params)
-        model.Session.commit()
+        print params
+        anno.save_changes()
         self.response.status = 201
         location = '/%s/%s' % (self.service_path, anno.id)
         self.response.headers['location'] = location
@@ -150,7 +157,7 @@ class AnnotatorStore(object):
             params = dict(self.request.params)
         params['id'] = id
         anno = model.Annotation.from_dict(params)
-        model.Session.commit()
+        anno.save_changes()
         self.response.status = 204
         return None
 

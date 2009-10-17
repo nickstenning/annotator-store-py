@@ -17,7 +17,7 @@ logger = logging.getLogger('annotator')
 from sqlalchemy import create_engine
 from sqlalchemy import Table, Column
 from sqlalchemy.types import *
-from sqlalchemy.orm import relation, backref, class_mapper
+from sqlalchemy.orm import relation, backref, class_mapper, object_session
 
 
 class JsonType(TypeDecorator):
@@ -61,15 +61,21 @@ def make_annotation_table(metadata):
 
 class Annotation(object):
 
+    def save_changes(self):
+        sess = object_session(self)
+        # TODO: deal with case where we should only flush ...
+        sess.commit()
+
     @classmethod
     def delete(self, id):
         anno = self.query.get(id)
         if anno:
-            Session.delete(anno)
-        Session.commit()
+            sess = object_session(anno)
+            sess.delete(anno)
+            anno.save_changes()
 
     def __str__(self):
-        out = u'%s %s %s' % (self.__class__.__name__, self.id, self.url)
+        out = u'%s %s' % (self.__class__.__name__, self.as_dict())
         return out.encode('utf8', 'ignore')
     
     def as_dict(self):
@@ -86,18 +92,23 @@ class Annotation(object):
     
     @classmethod
     def from_dict(cls, _dict):
-        # TODO: support case where id provided
+        print 'here ok'
+        print _dict
         id = _dict.get('id', None)
         if id:
             anno = Annotation.query.get(id)
         else:
+            print 'we are here ...'
             anno = Annotation()
+            # assert anno is not None
         for key in [ 'url', 'text', 'range' ]:
             if key in _dict:
                 setattr(anno, key, _dict[key])
+        print anno
         # TODO: decide whether we have range or ranges
         if 'ranges' in _dict and _dict['ranges']: 
             anno.range = _dict['ranges'][0]
+        print anno
         return anno
 
 def map_annotation_object(mapper, annotation_table):
