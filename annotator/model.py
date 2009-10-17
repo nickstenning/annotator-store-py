@@ -47,7 +47,8 @@ def make_annotation_table(metadata):
     annotation_table = Table('annotation', metadata,
         Column('id', Unicode(36), primary_key=True, default=lambda:
             unicode(uuid.uuid4())),
-        Column('url', UnicodeText),
+        # docid
+        Column('uri', UnicodeText),
         # json encoded object looking like
         # format, start, end
         # for default setup start = [element, offset]
@@ -92,23 +93,18 @@ class Annotation(object):
     
     @classmethod
     def from_dict(cls, _dict):
-        print 'here ok'
-        print _dict
         id = _dict.get('id', None)
         if id:
             anno = Annotation.query.get(id)
         else:
-            print 'we are here ...'
             anno = Annotation()
             # assert anno is not None
-        for key in [ 'url', 'text', 'range' ]:
+        for key in [ 'uri', 'text', 'range' ]:
             if key in _dict:
                 setattr(anno, key, _dict[key])
-        print anno
         # TODO: decide whether we have range or ranges
         if 'ranges' in _dict and _dict['ranges']: 
             anno.range = _dict['ranges'][0]
-        print anno
         return anno
 
 def map_annotation_object(mapper, annotation_table):

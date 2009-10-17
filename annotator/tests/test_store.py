@@ -120,7 +120,7 @@ class TestAnnotatorStore(object):
         offset = self.map.generate(controller='annotation', action='index')
         res = self.app.get(offset)
         anno = model.Annotation.query.get(anno_id)
-        assert anno.url in res, res
+        assert anno.uri in res, res
 
     def test_annotate_show(self):
         anno_id = self._create_annotation()
@@ -135,7 +135,7 @@ class TestAnnotatorStore(object):
         model.repo.rebuilddb()
         offset = self.map.generate(controller='annotation', action='create')
         text = u'any old thing'
-        inparams = {'text': text, 'url': 'http://localhost/',
+        inparams = {'text': text, 'uri': 'http://localhost/',
                 'ranges': [{'start': 'p', 'end': 'p'}]
                 }
         params = { 'json': model.json.dumps(inparams) }
@@ -177,7 +177,7 @@ class TestAnnotatorStore(object):
     
     def _create_annotation(self):
         anno = model.Annotation(
-                url=u'http://xyz.com',
+                uri=u'http://xyz.com',
                 range=u'1.0 2.0',
                 text=u'blah text',
                 )

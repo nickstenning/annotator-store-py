@@ -67,7 +67,7 @@ encoded.
 
 Annotations have the following attributes:
 
-  * url: doc id
+  * uri: document identifier
   * note: text of annotation
   * range(s): list of range objects. Each range object has:
     * format: range format (defines syntax/semantics of start end)

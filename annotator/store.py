@@ -135,7 +135,6 @@ class AnnotatorStore(object):
                 anno = model.Annotation.from_dict(objdict)
         else:
             anno = model.Annotation.from_dict(params)
-        print params
         anno.save_changes()
         self.response.status = 201
         location = '/%s/%s' % (self.service_path, anno.id)
