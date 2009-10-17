@@ -10,19 +10,22 @@ class JsAnnotateMiddleware(wsgifilter.filter.Filter):
     '''Add JS annotate into a document'''
 
     head_media = '''
-    <script src="%(media_url)s/jsannotate.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="%(media_url)s/jsannotate.min.css">
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"></script>
+    <script src="http://jquery-json.googlecode.com/svn/trunk/jquery.json.min.js"></script>
+
+    <script src="%(media_url)s/annotator.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="%(media_url)s/annotator.min.css">
     '''
 
     body_script = '''
     <script>
-      jQuery(function () {
-        // TODO: JSAnnotate.config
-        // configure with docid (if not already defined ...)
-        var rest_api = '%(server_api)s';
-        var rest_annotation = rest_api + '/annotation';
-        window.jsannotator = new Annotator();
-    });
+//      jQuery(function () {
+//        // TODO: JSAnnotate.config
+//        // configure with docid (if not already defined ...)
+//        var rest_api = '%(server_api)s';
+//        var rest_annotation = rest_api + '/annotation';
+//        window.jsannotator = new Annotator();
+//     });
     </script>
     '''
 

@@ -36,7 +36,7 @@ class TestJsAnnotateMiddleware:
 
     def test_head_media(self):
         res = self.app.get('/')
-        assert 'jsannotate.min.js' in res, res
+        assert 'annotator.min.js' in res, res
 
     def test_body_script(self):
         res = self.app.get('/')
