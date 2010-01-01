@@ -12,7 +12,7 @@ except ImportError:
     import simplejson as json
 
 import paste.request
-from routes import *
+from routes import Mapper
 import webob
 
 import annotator.model as model
