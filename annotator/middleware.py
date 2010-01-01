@@ -8,28 +8,6 @@ import wsgifilter.filter
 
 class JsAnnotateMiddleware(wsgifilter.filter.Filter):
     '''Add JS annotate into a document'''
-
-    head_media = '''
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"></script>
-    <script src="http://jquery-json.googlecode.com/svn/trunk/jquery.json.min.js"></script>
-
-    <script src="%(media_url)s/annotator.min.js"></script>
-    <link rel="stylesheet" type="text/css" href="%(media_url)s/annotator.min.css">
-    '''
-
-    body_script_tmpl = '''
-    <script>
-        jQuery(function() {
-          var annotator_prefix = '%s';
-          // an identifier for the document
-          var annotator_doc_uri = '%s';
-          $('#text-to-annotate').annotator();
-          $('#text-to-annotate').annotationStore({'prefix': annotator_prefix, 'uri':
-          annotator_doc_uri});
-        });
-    </script>
-    '''
-
     def __init__(self, app, media_mount_path, server_api):
         '''
         @param app: wsgi app to wrap
@@ -44,12 +22,44 @@ class JsAnnotateMiddleware(wsgifilter.filter.Filter):
     def filter(self, environ, headers, data):
         return self.modify_html(data)
 
+    body_script_tmpl = '''
+    <script>
+        jQuery(function($) {
+          var annotator_prefix = '%s';
+          // an identifier for the document
+          var annotator_doc_uri = '%s';
+          $('#text-to-annotate').annotator();
+          $('#text-to-annotate').annotationStore({'prefix': annotator_prefix});
+          // 'uri': annotator_doc_uri});
+        });
+    </script>
+    '''
+
     def body_script(self, doc_uri):
         return self.body_script_tmpl % (self.server_api + 'annotation', doc_uri)
 
-    def modify_html(self, html_doc, doc_uri=None):
+    jquery_media =  '''
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js"></script>
+    <script src="http://jquery-json.googlecode.com/svn/trunk/jquery.json.min.js"></script>
+    '''
+
+    head_media = '''
+    <script src="%(media_url)s/annotator.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="%(media_url)s/annotator.min.css">
+    '''
+
+    def modify_html(self, html_doc, doc_uri=None, include_jquery=True):
+        '''
+        @param include_jquery: include jQuery library (+ json extension)
+        required by js annotator. You may wish to set this to False if you are
+        already including jQuery.
+        '''
+        if include_jquery:
+            out = self.add_to_head(html_doc, self.jquery_media)
+        else:
+            out = html_doc
         head_media = self.head_media % { 'media_url': self.media_mount_path }
-        out = self.add_to_head(html_doc, head_media)
+        out = self.add_to_head(out, head_media)
         out = self.add_to_end_of_body(out, self.body_script(doc_uri))
         return out
 
