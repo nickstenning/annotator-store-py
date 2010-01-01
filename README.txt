@@ -39,8 +39,9 @@ Annotator is derived into 2 parts:
 plus storage (DB based).
 
 2. Frontend javascript that handles the user interface and can interact with
-the backend. This is currently provided as a separate package (jsannotate)
-though some integration in is done in this library.
+the backend. This is currently provided as a separate package (jsannotate -
+http://github.com/nickstenning/annotator) though some integration in is done in
+this library.
 
 The two components are decoupled so each is usable on its own.
 
@@ -80,7 +81,7 @@ Annotations have the following attributes:
 Changelog
 =========
 
-v0.3 2009-10-??
+v0.3 2009-10-18
 ---------------
 
 Major release:

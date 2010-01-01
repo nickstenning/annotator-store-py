@@ -20,7 +20,7 @@ setup(
 
     # metadata for upload to PyPI
     author = __author__,
-    author_email = 'rufus@rufuspollock.org',
+    author_email = 'info@okfn.org',
     description = \
 'Inline web annotation application and middleware using javascript and WSGI',
     long_description = \
