@@ -99,10 +99,15 @@ class AnnotatorStore(object):
         self.response.status = 404
         self.response.body = 'Not found'
 
-    def _dump(self, _struct):
+    def _jsonify(self, _struct):
         out = json.dumps(_struct)
         # return out.encode('utf8', 'ignore')
         return unicode(out)
+    
+    def _jsonpify(self, _struct):
+        self.response.content_type = 'text/javascript'
+        return u'%s(%s);' % (self.request.params['callback'],
+                json.dumps(_struct))
 
     def debug(self):
         self.response.content_type = 'text/plain'
@@ -113,7 +118,7 @@ class AnnotatorStore(object):
         for anno in model.Annotation.query.limit(100).all():
             result.append(anno.as_dict())
         self._set_json_header()
-        return self._dump(result)
+        return self._jsonify(result)
 
     def show(self):
         id = self.mapdict['id']
@@ -123,7 +128,7 @@ class AnnotatorStore(object):
             return ['Not found']
         self._set_json_header()
         result = anno.as_dict()
-        return self._dump(result)
+        return self._jsonify(result)
     
     def create(self):
         if 'json' in self.request.params:
@@ -137,9 +142,14 @@ class AnnotatorStore(object):
             anno = model.Annotation.from_dict(params)
         anno.save_changes()
         self.response.status = 201
-        location = '/%s/%s' % (self.service_path, anno.id)
+        location = self.map.generate(controller='annotation', action='show', id=anno.id)
         self.response.headers['location'] = location
-        return u''
+        # also return json or jsonp
+        if 'callback' in self.request.params:
+            return self._jsonpify({'id': anno.id})
+        else:
+            self._set_json_header()
+            return self._jsonify({'id': anno.id})
 
     def update(self):
         id = self.mapdict['id']

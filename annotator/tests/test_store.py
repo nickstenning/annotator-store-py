@@ -140,20 +140,33 @@ class TestAnnotatorStore(object):
                 }
         params = { 'json': model.json.dumps(inparams) }
         print offset
-        # test both put and post
         res = self.app.post(offset, params)
-        res = self.app.put(offset, params)
+        # check we get json back
+        assert 'id' in res
         # TODO make this test more selective
         items = model.Annotation.query.all()
         items = list(items)
-        assert len(items) == 2, len(items)
+        assert len(items) == 1, len(items)
         assert items[0].text == text
         assert items[0].range == inparams['ranges'][0]
+        exp = self.map.generate(controller='annotation', action='show',
+                id=items[0].id)
+        assert dict(res.headers)['location'] == exp, (exp, res.headers)
+
+        # test put too
+        res = self.app.put(offset, params)
+        assert 'id' in res
 
         # test posting a list
         res = self.app.post(offset, {'json': model.json.dumps(3*[inparams])})
         count = model.Annotation.query.count()
         assert count == 5, count
+
+        # check jsonp stuff
+        jsonpname = 'jsonpXXXX'
+        params['callback'] = jsonpname
+        res = self.app.post(offset, params)
+        assert '%s({"id":' % (jsonpname) in res, res
 
     def test_annotate_update(self):
         anno_id = self._create_annotation()
