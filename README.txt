@@ -81,6 +81,14 @@ Annotations have the following attributes:
 Changelog
 =========
 
+
+HEAD
+----
+
+  * New attributes on Annotation: user, tags
+  * Allow arbitrary attributes on annotation via extras
+
+
 v0.3 2009-10-18
 ---------------
 

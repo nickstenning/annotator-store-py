@@ -56,6 +56,9 @@ def make_annotation_table(metadata):
         Column('text', UnicodeText),
         Column('quote', UnicodeText),
         Column('created', DateTime, default=datetime.now),
+        Column('user', UnicodeText),
+        Column('tags', JsonType),
+        Column('extras', JsonType),
         )
     return annotation_table
 
@@ -89,6 +92,10 @@ class Annotation(object):
             out[col] = val
         # add ranges back in for jsannotate compatibility
         out['ranges'] = [ self.range ] if self.range else []
+        if out['extras']:
+            for k,v in out['extras'].items():
+                out[k] = v
+        del out['extras']
         return out
     
     @classmethod
@@ -99,12 +106,18 @@ class Annotation(object):
         else:
             anno = Annotation()
             # assert anno is not None
-        for key in [ 'uri', 'text', 'range' ]:
-            if key in _dict:
-                setattr(anno, key, _dict[key])
-        # TODO: decide whether we have range or ranges
-        if 'ranges' in _dict and _dict['ranges']: 
-            anno.range = _dict['ranges'][0]
+        table = class_mapper(cls).mapped_table
+        attrnames = table.c.keys()
+        for k,v in _dict.items():
+            if k in attrnames:
+                setattr(anno, k, v)
+            # Support ranges as well as range
+            # TODO: decide whether we have range or ranges
+            elif k == 'ranges':
+                if _dict['ranges']:
+                    anno.range = _dict['ranges'][0]
+            else:
+                anno.extras[k] = v
         return anno
 
 def map_annotation_object(mapper, annotation_table):
