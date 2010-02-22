@@ -4,8 +4,6 @@ Introduction
 Annotator is a inline web annotation system designed for easy integration into
 web applications.
 
-It also providers its own web annotation service.
-
 
 Getting Started
 ===============
@@ -45,9 +43,28 @@ this library.
 
 The two components are decoupled so each is usable on its own.
 
+Specification of Annotations
+----------------------------
 
-Specification of the Annotation Store
--------------------------------------
+Annotations have the following attributes:
+
+  * uri: document identifier
+  * user: an identifier for the user who created the annotation. To avoid
+    cross-application collision it is recommended that you either:
+    * Generate uuids for your users stored as: urn:uuid:{uuid} (or just {uuid})
+    * (or) Prefix your usernames with a unique (e.g. uuid) string (e.g.
+      {uuid-identifying-application}::{your-username}
+  * note: text of annotation
+  * range(s): list of range objects. Each range object has:
+    * [optional] format: range format (defines syntax/semantics of start end)
+    * start: xpath, offset (for default html format)
+    * end: xpath, offset (for default html format)
+  * [optional] quote (the quoted text -- or snippet thereof)
+  * created (datetime of creation)
+  * "extras": you add arbitrary addtional key/value pairs to annotations
+
+Annotation Store: RESTFul Interface
+-----------------------------------
 
 The RESTful interface is provided by the WSGI application in annotator/store.py.
 
@@ -66,16 +83,38 @@ either as individual query parameters or as as json payload (encoded in
 standard way as argument to a parameter named json). Returned data will be json
 encoded.
 
-Annotations have the following attributes:
+Notes:
+  * CREATE: In standard RESTFul fashion, CREATE returns a Location
+    header pointing to created annotation. For convenience, it also returns a
+    JSON body with a id of newly created object as the single key/value.
+    Furthermore, there is also JSONP support via a 'callback' parameter -- if
+    there is a callback=function_name in parameters then we return javascript
+    of form: `function_name({'id': id})`
 
-  * uri: document identifier
-  * note: text of annotation
-  * range(s): list of range objects. Each range object has:
-    * format: range format (defines syntax/semantics of start end)
-    * start: xpath, offset (for default html format)
-    * end: xpath, offset (for default html format)
-  * [optional] quote (the quoted text -- or snippet thereof)
-  * [optional] created (datetime of creation)
+Searching
+---------
+
+Search API is located at: {mount-point}/search
+
+Results are returned in JSON format::
+
+    {
+        'total': total-number-of-results,
+        'results': list-of-results-in-json-format
+    }
+
+You can search by any annotation attribute (but not "extras"). For example to
+search for annotation with a particular doc uri "our-doc-uri" you'd visit::
+
+    .../search?uri=our-doc-uri
+
+In addition to search parameters there are three additional control parameters:
+
+  * limit=val: limit the number of results returned to val (defaults to 100 if
+    not set)
+  * offset=val: return results from val onwards
+  * all_fields=1: if absent only return ids of annotations, if present (true)
+    return all fields of the annotation
 
 
 Changelog
@@ -86,7 +125,9 @@ HEAD
 ----
 
   * New attributes on Annotation: user, tags
-  * Allow arbitrary attributes on annotation via extras
+  * Allow arbitrary attributes on annotation via "extras" field
+  * Searching annotations (essential for multi-document annotation!)
+  * Improved documentation
 
 
 v0.3 2009-10-18
@@ -121,7 +162,7 @@ v0.1 2007-04-01
 Copyright and License
 =====================
 
-Copyright (c) 2006-2009 the Open Knowledge Foundation.
+Copyright (c) 2006-2010 the Open Knowledge Foundation.
 
 Licensed under the MIT license:
 

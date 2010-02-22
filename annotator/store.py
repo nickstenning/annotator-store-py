@@ -32,17 +32,16 @@ class AnnotatorStore(object):
         self.service_path = service_path
 
     def get_routes_mapper(self):
+        map = Mapper()
+
+        ## ======================
+        ## REST API: /annotation/
+
         # some extra additions to standard layout from map.resource
         # help to make the url layout a bit nicer for those using the web ui
-        map = Mapper()
-        map.connect(self.service_path + 'debug', controller='annotation', action='debug')
         map.connect(self.service_path + '/annotation/delete/:id',
                 controller='annotation',
                 action='delete',
-                conditions=dict(method=['GET']))
-        map.connect(self.service_path + '/annotation/edit/:id',
-                controller='annotation',
-                action='edit',
                 conditions=dict(method=['GET']))
 
         # PUT does not seem connected to create by default
@@ -62,6 +61,13 @@ class AnnotatorStore(object):
                 controller='annotation',
                 action='update',
                 conditions=dict(method=['POST']))
+
+        ## ==========
+        ## Search API
+        map.connect(self.service_path + '/search',
+                controller='annotation', action='search', id=None
+                )
+
         return map
 
     def __call__(self, environ, start_response):
@@ -108,10 +114,6 @@ class AnnotatorStore(object):
         self.response.content_type = 'text/javascript'
         return u'%s(%s);' % (self.request.params['callback'],
                 json.dumps(_struct))
-
-    def debug(self):
-        self.response.content_type = 'text/plain'
-        return self.request.params.items()
 
     def index(self):
         result = []
@@ -184,3 +186,34 @@ class AnnotatorStore(object):
                 self.response.status = 500
                 return u'<h1>500 Internal Server Error</h1>Delete failed\n %s'% inst
     
+    def search(self):
+        params = [ (k,v) for k,v in self.request.params.items() if k not in [ 'all_fields', 'offset', 'limit' ]
+                ]
+        all_fields = self.request.params.get('all_fields', False)
+        all_fields = bool(all_fields)
+        offset = self.request.params.get('offset', 0)
+        limit = self.request.params.get('limit', 100)
+        if all_fields:
+            q = model.Session.query(model.Annotation)
+        else:
+            q = model.Session.query(model.Annotation.id)
+        for k,v in params:
+            kwargs = { k: unicode(v) }
+            q = q.filter_by(**kwargs)
+        total = q.count()
+        q = q.offset(offset)
+        q = q.limit(limit)
+        results = q.all()
+        if all_fields:
+            results = [ x.as_dict() for x in results ]
+        else:
+            results = [ {'id': x} for x in results ]
+
+        # TODO: jsonpify
+        qresults = { 
+                'total': total,
+                'results': results
+                }
+        self._set_json_header()
+        return self._jsonify(qresults)
+

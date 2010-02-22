@@ -56,12 +56,6 @@ class TestMapper:
         out = self.map.match('%s/annotation/' % self.service_path)
         assert out['id'] == None
 
-    def test_match_edit(self):
-        self.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = self.map.match('%s/annotation/edit/1' % self.service_path)
-        assert out['action'] == 'edit'
-        assert out['id'] == '1'
-
     def test_match_update(self):
         self.map.environ = { 'REQUEST_METHOD' : 'PUT' }
         out = self.map.match('%s/annotation/1' % self.service_path)
@@ -70,6 +64,14 @@ class TestMapper:
         self.map.environ = { 'REQUEST_METHOD' : 'POST' }
         out = self.map.match('%s/annotation/1' % self.service_path)
         assert out['action'] == 'update'
+
+    def test_match_update(self):
+        out = self.map.match('%s/search' % self.service_path)
+        assert out['controller'] == 'annotation'
+        assert out['action'] == 'search'
+
+    ## ===========================
+    ## Url For tests
 
     def test_url_for_new(self):
         offset = self.map.generate(controller='annotation', action='new')
@@ -92,16 +94,16 @@ class TestMapper:
         exp = '%s/annotation/1' % self.service_path
         assert offset == exp
 
-    def test_url_for_edit(self):
-        offset = self.map.generate(controller='annotation',
-                action='edit', id=1, method='GET')
-        exp = '%s/annotation/edit/1' % self.service_path
-        assert offset == exp
-
     def test_url_for_update(self):
         offset = self.map.generate(controller='annotation',
                 action='update', id=1, method='POST')
         exp = '%s/annotation/1' % self.service_path
+        assert offset == exp, (offset, exp)
+
+    def test_url_for_search(self):
+        offset = self.map.generate(controller='annotation',
+                action='search', uri='xxx')
+        exp = '%s/search?uri=xxx' % self.service_path
         assert offset == exp, (offset, exp)
 
 
@@ -114,6 +116,11 @@ class TestAnnotatorStore(object):
         wsgiapp = annotator.store.AnnotatorStore(service_path='/annotation-xyz')
         self.map = wsgiapp.get_routes_mapper()
         self.app = paste.fixture.TestApp(wsgiapp)
+
+    def teardown(self):
+        model.Session.query(model.Annotation).delete()
+        model.Session.commit()
+        model.Session.remove()
 
     def test_0_annotate_index(self):
         anno_id = self._create_annotation()
@@ -187,6 +194,60 @@ class TestAnnotatorStore(object):
         self.app.get(offset, '204')
         tmp = model.Annotation.query.get(anno_id)
         assert tmp is None
+
+    def test_search(self):
+        uri1 = u'http://xyz.com'
+        uri2 = u'urn:uuid:xxxxx'
+        user = u'levin'
+        user2 = u'anna'
+        anno = model.Annotation(
+                uri=uri1,
+                text=uri1,
+                user=user,
+                )
+        anno2 = model.Annotation(
+                uri=uri1,
+                text=uri1 + uri1,
+                user=user2,
+                )
+        anno3 = model.Annotation(
+                uri=uri2,
+                text=uri2,
+                user=user
+                )
+        model.Session.commit()
+        annoid = anno.id
+        anno2id = anno2.id
+        model.Session.remove()
+
+        offset = self.map.generate(controller='annotation', action='search')
+        res = self.app.get(offset)
+        body = model.json.loads(res.body)
+        assert body['total'] == 3, body
+
+        offset = self.map.generate(controller='annotation', action='search',
+                limit=1)
+        res = self.app.get(offset)
+        body = model.json.loads(res.body)
+        assert body['total'] == 3, body
+        assert len(body['results']) == 1
+
+        offset = self.map.generate(controller='annotation', action='search',
+                uri=uri1, all_fields=1)
+        res = self.app.get(offset)
+        body = model.json.loads(res.body)
+        assert body['total'] == 2, body
+        out = body['results']
+        assert len(out) == 2
+        assert out[0]['uri'] == uri1
+        assert out[0]['uri'] == uri1
+        assert out[0]['id'] in [ annoid, anno2id ]
+
+        offset = self.map.generate(controller='annotation', action='search',
+                uri=uri1)
+        res = self.app.get(offset)
+        body = model.json.loads(res.body)
+        assert body['results'][0].keys() == ['id'], body['results']
     
     def _create_annotation(self):
         anno = model.Annotation(
