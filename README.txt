@@ -129,6 +129,8 @@ HEAD
   * Allow arbitrary attributes on annotation via "extras" field
   * Searching annotations (essential for multi-document annotation!)
   * Improved documentation
+  * Support locating locating annotation RESTFul url within store (e.g.
+    {store}/annotations instead {store}/annotation)
 
 
 v0.3 2009-10-18

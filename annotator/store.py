@@ -30,34 +30,37 @@ class AnnotatorStore(object):
         if service_path and not service_path.startswith('/'):
             service_path = '/' + service_path
         self.service_path = service_path
+        # singular or plural ...
+        self.anno_rest_name = 'annotations'
 
     def get_routes_mapper(self):
         map = Mapper()
 
         ## ======================
-        ## REST API: /annotation/
+        ## REST API: /annotations/
 
         # some extra additions to standard layout from map.resource
         # help to make the url layout a bit nicer for those using the web ui
-        map.connect(self.service_path + '/annotation/delete/:id',
+        map.connect(self.service_path + '/' + self.anno_rest_name + '/delete/:id',
                 controller='annotation',
                 action='delete',
                 conditions=dict(method=['GET']))
 
         # PUT does not seem connected to create by default
-        map.connect(self.service_path + '/annotation',
+        map.connect(self.service_path + '/' + self.anno_rest_name,
                 controller='annotation',
                 action='create',
                 conditions=dict(method=['PUT', 'POST']))
 
-        map.resource('annotation', 'annotation', path_prefix=self.service_path)
+        map.resource('annotation', self.anno_rest_name,
+                path_prefix=self.service_path, controller='annotation')
 
         # map.resource assumes PUT for update but we want to use POST as well
         # exact mappings for REST seems a hotly contested matter see e.g.
         # http://www.megginson.com/blogs/quoderat/archives/2005/04/03/post-in-rest-create-update-or-action/
         # must have this *after* map.resource as otherwise overrides the create
         # action
-        map.connect(self.service_path + '/annotation/:id',
+        map.connect(self.service_path + '/%s/:id' % self.anno_rest_name,
                 controller='annotation',
                 action='update',
                 conditions=dict(method=['POST']))

@@ -12,57 +12,58 @@ class TestMapper:
     service_path = '/.annotation-xyz'
     store = annotator.store.AnnotatorStore(service_path=service_path)
     map = store.get_routes_mapper()
+    anno_rest_name = store.anno_rest_name
 
     def test_match_double_slash(self):
         # demonstrate that double slashes mess things up!
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = self.map.match('//annotation/')
+        out = self.map.match('//annotations/')
         assert out == None
         # assert out['action'] == 'index'
 
     def test_match_new(self):
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = self.map.match('%s/annotation/new' % self.service_path)
+        out = self.map.match('%s/%s/new' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'new'
 
     def test_match_index(self):
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = self.map.match('%s/annotation' % self.service_path)
+        out = self.map.match('%s/%s' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'index'
 
     def test_match_show(self):
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = self.map.match('%s/annotation/1' % self.service_path)
+        out = self.map.match('%s/%s/1' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'show'
 
     def test_match_create(self):
         self.map.environ = { 'REQUEST_METHOD' : 'POST' }
-        out = self.map.match('%s/annotation' % self.service_path)
+        out = self.map.match('%s/%s' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'create'
 
         self.map.environ = { 'REQUEST_METHOD' : 'PUT' }
-        out = self.map.match('%s/annotation' % self.service_path)
+        out = self.map.match('%s/%s' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'create'
 
     def test_match_delete(self):
         self.map.environ = { 'REQUEST_METHOD' : 'GET' }
-        out = self.map.match('%s/annotation/delete/1' % self.service_path)
+        out = self.map.match('%s/%s/delete/1' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'delete'
         assert out['id'] == '1'
         self.map.environ = { 'REQUEST_METHOD' : 'DELETE' }
-        out = self.map.match('%s/annotation/1' % self.service_path)
+        out = self.map.match('%s/%s/1' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'delete'
         assert out['id'] == '1'
-        out = self.map.match('%s/annotation/' % self.service_path)
+        out = self.map.match('%s/%s/' % (self.service_path, self.anno_rest_name))
         assert out['id'] == None
 
     def test_match_update(self):
         self.map.environ = { 'REQUEST_METHOD' : 'PUT' }
-        out = self.map.match('%s/annotation/1' % self.service_path)
+        out = self.map.match('%s/%s/1' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'update'
         assert out['id'] == '1'
         self.map.environ = { 'REQUEST_METHOD' : 'POST' }
-        out = self.map.match('%s/annotation/1' % self.service_path)
+        out = self.map.match('%s/%s/1' % (self.service_path, self.anno_rest_name))
         assert out['action'] == 'update'
 
     def test_match_update(self):
@@ -73,31 +74,36 @@ class TestMapper:
     ## ===========================
     ## Url For tests
 
+    def test_url_for_index(self):
+        offset = self.map.generate(controller='annotation', action='index')
+        exp = '%s/%s' % (self.service_path, self.anno_rest_name)
+        assert offset == exp, offset
+
     def test_url_for_new(self):
         offset = self.map.generate(controller='annotation', action='new')
-        exp = '%s/annotation/new' % self.service_path
-        assert offset == exp
+        exp = '%s/%s/new' % (self.service_path, self.anno_rest_name)
+        assert offset == exp, offset
 
     def test_url_for_create(self):
         offset = self.map.generate(controller='annotation', action='create',
                 method='POST' )
-        exp = '%s/annotation' % self.service_path
+        exp = '%s/%s' % (self.service_path, self.anno_rest_name)
         assert offset == exp
 
     def test_url_for_delete(self):
         offset = self.map.generate(controller='annotation',
                 action='delete', id=1, method='GET' )
-        exp = '%s/annotation/delete/1' % self.service_path
+        exp = '%s/%s/delete/1' % (self.service_path, self.anno_rest_name)
         assert offset == exp
         offset = self.map.generate(controller='annotation',
                 action='delete', id=1, method='DELETE' )
-        exp = '%s/annotation/1' % self.service_path
-        assert offset == exp
+        exp = '%s/%s/1' % (self.service_path, self.anno_rest_name)
+        assert offset == exp, offset
 
     def test_url_for_update(self):
         offset = self.map.generate(controller='annotation',
                 action='update', id=1, method='POST')
-        exp = '%s/annotation/1' % self.service_path
+        exp = '%s/%s/1' % (self.service_path, self.anno_rest_name)
         assert offset == exp, (offset, exp)
 
     def test_url_for_search(self):
@@ -125,6 +131,7 @@ class TestAnnotatorStore(object):
     def test_0_annotate_index(self):
         anno_id = self._create_annotation()
         offset = self.map.generate(controller='annotation', action='index')
+        print offset
         res = self.app.get(offset)
         anno = model.Annotation.query.get(anno_id)
         assert anno.uri in res, res
