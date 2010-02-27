@@ -111,7 +111,7 @@ search for annotation with a particular doc uri "our-doc-uri" you'd visit::
 In addition to search parameters there are three additional control parameters:
 
   * limit=val: limit the number of results returned to val (defaults to 100 if
-    not set)
+    not set). To have all results returned set to -1.
   * offset=val: return results from val onwards
   * all_fields=1: if absent only return ids of annotations, if present (true)
     return all fields of the annotation

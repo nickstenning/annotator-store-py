@@ -195,7 +195,9 @@ class AnnotatorStore(object):
         all_fields = self.request.params.get('all_fields', False)
         all_fields = bool(all_fields)
         offset = self.request.params.get('offset', 0)
-        limit = self.request.params.get('limit', 100)
+        limit = int(self.request.params.get('limit', 100))
+        if limit < 0:
+            limit = None
         # important we use session off model.Annotation as Annotation may be
         # used by external library (and hence using an external session)
         if all_fields:

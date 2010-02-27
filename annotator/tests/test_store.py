@@ -255,6 +255,12 @@ class TestAnnotatorStore(object):
         res = self.app.get(offset)
         body = model.json.loads(res.body)
         assert body['results'][0].keys() == ['id'], body['results']
+
+        offset = self.map.generate(controller='annotation', action='search',
+                limit=-1)
+        res = self.app.get(offset)
+        body = model.json.loads(res.body)
+        assert len(body['results']) == 3, body
     
     def _create_annotation(self):
         anno = model.Annotation(
