@@ -125,6 +125,7 @@ HEAD
 ----
 
   * New attributes on Annotation: user, tags
+  * Support for jsonp and returning id on annotation create
   * Allow arbitrary attributes on annotation via "extras" field
   * Searching annotations (essential for multi-document annotation!)
   * Improved documentation
