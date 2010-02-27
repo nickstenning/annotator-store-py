@@ -193,10 +193,13 @@ class AnnotatorStore(object):
         all_fields = bool(all_fields)
         offset = self.request.params.get('offset', 0)
         limit = self.request.params.get('limit', 100)
+        # important we use session off model.Annotation as Annotation may be
+        # used by external library (and hence using an external session)
         if all_fields:
-            q = model.Session.query(model.Annotation)
+            q = model.Annotation.query
         else:
-            q = model.Session.query(model.Annotation.id)
+            sess = model.Annotation.query.session
+            q = sess.query(model.Annotation.id)
         for k,v in params:
             kwargs = { k: unicode(v) }
             q = q.filter_by(**kwargs)
