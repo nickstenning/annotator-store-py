@@ -198,8 +198,11 @@ class AnnotatorStore(object):
         if all_fields:
             q = model.Annotation.query
         else:
-            sess = model.Annotation.query.session
-            q = sess.query(model.Annotation.id)
+            # only supported in sqlalchemy >= 0.5
+            # so have to do it the inefficient way
+            # sess = model.Annotation.query.session
+            # q = sess.query(model.Annotation.id)
+            q = model.Annotation.query
         for k,v in params:
             kwargs = { k: unicode(v) }
             q = q.filter_by(**kwargs)
@@ -210,7 +213,7 @@ class AnnotatorStore(object):
         if all_fields:
             results = [ x.as_dict() for x in results ]
         else:
-            results = [ {'id': x} for x in results ]
+            results = [ {'id': x.id} for x in results ]
 
         # TODO: jsonpify
         qresults = { 
