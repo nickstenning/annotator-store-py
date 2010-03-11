@@ -1,8 +1,4 @@
 """Annotation storage.
-
-TODO:
-
-1. Move to templates for annotator store forms (?)
 """
 import os
 import logging

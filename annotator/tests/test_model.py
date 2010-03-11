@@ -1,7 +1,7 @@
 import annotator.model as model
 model.repo.rebuilddb()
 
-class TestAnnotation:
+class TestAnnotation(object):
 
     @classmethod
     def setup_class(self):

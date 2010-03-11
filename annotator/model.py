@@ -18,6 +18,12 @@ from sqlalchemy import create_engine
 from sqlalchemy import Table, Column
 from sqlalchemy.types import *
 from sqlalchemy.orm import relation, backref, class_mapper, object_session
+try:
+    from vdm.sqlalchemy import RevisionedObjectMixin, StatefulObjectMixin, make_revisioned_table, Revisioner, make_revision_table
+except ImportError:
+    class Dummy(object): pass
+    RevisionedObjectMixin = Dummy
+    StatefulObjectMixin = object
 
 
 class JsonType(TypeDecorator):
@@ -43,7 +49,7 @@ class JsonType(TypeDecorator):
         return JsonType(self.impl.length)
 
 
-def make_annotation_table(metadata):
+def make_annotation_table(metadata, make_revisioned=False):
     annotation_table = Table('annotation', metadata,
         Column('id', Unicode(36), primary_key=True, default=lambda:
             unicode(uuid.uuid4())),
@@ -60,10 +66,15 @@ def make_annotation_table(metadata):
         Column('tags', JsonType),
         Column('extras', JsonType),
         )
-    return annotation_table
+    if make_revisioned:
+        annotation_revision_table = make_revisioned_table(annotation_table)
+        revision_table = make_revision_table(metadata)
+    else:
+        annotation_revisioned_table = None
+    return [annotation_table, annotation_revision_table]
 
 
-class Annotation(object):
+class Annotation(RevisionedObjectMixin,StatefulObjectMixin):
 
     def save_changes(self):
         sess = object_session(self)
@@ -120,8 +131,16 @@ class Annotation(object):
                 anno.extras[k] = v
         return anno
 
-def map_annotation_object(mapper, annotation_table):
-    mapper(Annotation, annotation_table)
+def map_annotation_object(mapper, annotation_table,
+        annotation_revision_table=None, make_revisioned=False):
+    '''Map Annotation object with supplied mapper and annotation_table. 
+    '''
+    if make_revisioned:
+        mapper(Annotation, annotation_table,
+            extension=Revisioner(annotation_revision_table)
+            )
+    else:
+        mapper(Annotation, annotation_table)
 
 
 from sqlalchemy.orm import scoped_session, sessionmaker, create_session
@@ -141,14 +160,10 @@ class Repository(object):
         Session.bind = engine
         mapper = Session.mapper
 
-        anno_table = make_annotation_table(self.metadata)
-        map_annotation_object(mapper, anno_table)
-
-#         def set_default_connection(dburi=None):
-#                 cwd = os.getcwd()
-#                 path = os.path.join(cwd, 'testsqlite.db')
-#                 uri = 'sqlite:///%s' % path
-#             # uri = 'sqlite:///:memory:'
+        make_revisioned = False
+        anno_table,anno_rev_table = make_annotation_table(self.metadata,
+                make_revisioned)
+        map_annotation_object(mapper, anno_table, anno_rev_table, make_revisioned)
 
     def createdb(self):
         logger.info('Creating db')
