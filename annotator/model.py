@@ -25,6 +25,10 @@ except ImportError:
     RevisionedObjectMixin = Dummy
     StatefulObjectMixin = object
 
+# Client libraries should set Session using their sqlalchemy Session
+# We configure it in Repository.configure
+Session = None
+
 
 class JsonType(TypeDecorator):
     '''Custom SQLAlchemy type for JSON data (serializing on save and
@@ -70,7 +74,7 @@ def make_annotation_table(metadata, make_revisioned=False):
         annotation_revision_table = make_revisioned_table(annotation_table)
         revision_table = make_revision_table(metadata)
     else:
-        annotation_revisioned_table = None
+        annotation_revision_table = None
     return [annotation_table, annotation_revision_table]
 
 
@@ -143,21 +147,23 @@ def map_annotation_object(mapper, annotation_table,
         mapper(Annotation, annotation_table)
 
 
-from sqlalchemy.orm import scoped_session, sessionmaker, create_session
-Session = scoped_session(sessionmaker(
-    autoflush=True,
-    autocommit=False,
-    ))
 class Repository(object):
 
     def configure(self, dburi):
         from sqlalchemy import MetaData
-
+        from sqlalchemy.orm import scoped_session, sessionmaker, create_session
         engine = create_engine(dburi, echo=False)
 
         self.metadata = MetaData()
         self.metadata.bind = engine
-        Session.bind = engine
+        # have to do annotator.model.Session =, rather than
+        # Session = (o/w just binds to a local variable)
+        import annotator.model
+        annotator.model.Session = scoped_session(sessionmaker(
+            autoflush=True,
+            autocommit=False,
+            ))
+        annotator.model.Session.bind = engine
         mapper = Session.mapper
 
         make_revisioned = False
