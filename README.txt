@@ -10,8 +10,8 @@ Getting Started
 
 Get the annotator code and install it (using pip)::
 
-    # check out the mercurial repo
-    hg clone https://knowledgeforge.net/okfn/annotator
+    # check out the git repo
+    git clone git://github.com/nickstenning/annotator-store-py.git
     cd annotator
     pip -E ../pyenv install -e .
 
@@ -24,7 +24,7 @@ You will also need sqlite and python db connector for it.
 Try out the demo (requires PasteScript):
 
     paster serve demo.ini
-    
+
 Visit http://localhost:5000/
 
 
@@ -148,7 +148,7 @@ Major release:
 v0.2 2009-07-26
 ---------------
 
-  * Significant polishing 
+  * Significant polishing
   * Convert backend store to use SQLAlchemy
   * Load RESTful interface at an arbitrary url
   * Last version to be based on marginalia
