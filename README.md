@@ -1,8 +1,9 @@
-Introduction
-============
+Reference implementation backend for `Annotator` web annotation system.
 
-Annotator is a inline web annotation system designed for easy integration into
-web applications.
+Defines the reference RESTFul API and uses RDBMS storage. Python-based using
+sqlalchemy and webob.
+
+.. _Annotator: http://github.com/nickstenning/annotator
 
 
 Getting Started
@@ -32,55 +33,20 @@ Visit the url::
 Response should be the empty list [] as no annotations are in the store
 
 
-Technical Information
-=====================
-
-Annotator is derived into 2 parts:
-
-1. A generic backend for storing annotations consisting of a RESTful interface
-plus storage (DB based).
-
-2. Frontend javascript that handles the user interface and can interact with
-the backend. This is currently provided as a separate package (jsannotate -
-http://github.com/nickstenning/annotator) though some integration in is done in
-this library.
-
-The two components are decoupled so each is usable on its own.
-
-Specification of Annotations
-----------------------------
-
-Annotations have the following attributes:
-
-  * uri: document identifier
-  * user: an identifier for the user who created the annotation. To avoid
-    cross-application collision it is recommended that you either:
-    * Generate uuids for your users stored as: urn:uuid:{uuid} (or just {uuid})
-    * (or) Prefix your usernames with a unique (e.g. uuid) string (e.g.
-      {uuid-identifying-application}::{your-username}
-  * note: text of annotation
-  * range(s): list of range objects. Each range object has:
-    * [optional] format: range format (defines syntax/semantics of start end)
-    * start: xpath, offset (for default html format)
-    * end: xpath, offset (for default html format)
-  * [optional] quote (the quoted text -- or snippet thereof)
-  * created (datetime of creation)
-  * "extras": you add arbitrary addtional key/value pairs to annotations
-
-Annotation Store: RESTFul Interface
------------------------------------
+RESTFul Interface
+=================
 
 The RESTful interface is provided by the WSGI application in annotator/store.py.
 
-It can be mounted anywhere you like and provides a RESTful resource 'annotation'.
+It can be mounted anywhere you like and provides a RESTful resource 'annotations'.
 
 For example if you have mounted it at '/store' you would have:
 
-    GET /store/annotation # list annotation
-    POST /store/annotation # create
-    GET /store/annotation/id # get annotation
-    POST /store/annotation/id # update annotation
-    DELETE /store/annotation/id # delete annotation
+    GET /store/annotations # list annotation
+    POST /store/annotations # create
+    GET /store/annotations/id # get annotation
+    POST /store/annotations/id # update annotation
+    DELETE /store/annotations/id # delete annotation
 
 Attributes for these methods (in particular annotation values) may be provided
 either as individual query parameters or as as json payload (encoded in
@@ -88,6 +54,7 @@ standard way as argument to a parameter named json). Returned data will be json
 encoded.
 
 Notes:
+
   * CREATE: In standard RESTFul fashion, CREATE returns a Location
     header pointing to created annotation. For convenience, it also returns a
     JSON body with a id of newly created object as the single key/value.
@@ -121,6 +88,29 @@ In addition to search parameters there are three additional control parameters:
     return all fields of the annotation
 
 
+Specification of Annotations
+============================
+
+Annotations have the following attributes:
+
+  * id: usually a uuid but up to implementing backend
+  * uri: document identifier
+  * user: an identifier for the user who created the annotation. To avoid
+    cross-application collision it is recommended that you either:
+    * Generate uuids for your users stored as: urn:uuid:{uuid} (or just {uuid})
+    * (or) Prefix your usernames with a unique (e.g. uuid) string (e.g.
+      {uuid-identifying-application}::{your-username}
+  * note: text of annotation
+  * range(s): list of range objects. Each range object has:
+    * [optional] format: range format (defines syntax/semantics of start end)
+    * start: xpath, offset (for default html format)
+    * end: xpath, offset (for default html format)
+  * [optional] quote (the quoted text -- or snippet thereof)
+  * [optional] created (datetime of creation)
+  * "extras": you add arbitrary addtional key/value pairs to annotations
+
+
+
 Changelog
 =========
 
@@ -133,7 +123,7 @@ HEAD
   * Allow arbitrary attributes on annotation via "extras" field
   * Searching annotations (essential for multi-document annotation!)
   * Improved documentation
-  * Support locating locating annotation RESTFul url within store (e.g.
+  * Support locating annotation RESTFul url within store (e.g.
     {store}/annotations instead {store}/annotation)
 
 
