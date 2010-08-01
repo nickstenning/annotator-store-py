@@ -46,6 +46,6 @@ and all the marginalia media files (with improvements).
         'Topic :: Software Development :: Libraries :: Python Modules'],
     entry_points='''
     [paste.app_factory]
-    demo = annotator.demo:make_app
+    store = annotator.store:make_app
     ''',
 )

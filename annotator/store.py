@@ -224,3 +224,15 @@ class AnnotatorStore(object):
         self._set_json_header()
         return self._jsonify(qresults)
 
+
+def make_app(global_config, **local_conf):
+    '''Make a wsgi app and return it
+
+    Designed for use by paster or modwsgi etc
+    '''
+    dburi = local_conf['dburi']
+    model.repo.configure(dburi)
+    model.repo.createdb()
+    app = AnnotatorStore()
+    return app
+

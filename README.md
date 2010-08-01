@@ -21,11 +21,15 @@ you have python <= 2.5 install you should install simplejson instead.
 
 You will also need sqlite and python db connector for it.
 
-Try out the demo (requires PasteScript):
+Try out the demo (requires PasteScript)::
 
-    paster serve demo.ini
+    paster serve store.ini
 
-Visit http://localhost:5000/
+Visit the url::
+
+    http://localhost:5000/annotations/
+
+Response should be the empty list [] as no annotations are in the store
 
 
 Technical Information
