@@ -74,6 +74,14 @@ class AnnotatorStore(object):
 
         return self.response(environ, start_response)
 
+    def _204(self):
+        self.response.status = 204
+        return None
+
+    def _400(self):
+           self.response.status = 400
+           return u'Bad Request'
+
     def _404(self):
         self.response.status = 404
         return u'Not Found'
@@ -92,14 +100,15 @@ class AnnotatorStore(object):
             return u'%s' % result_json
 
     def _cors_preflight(self):
-        self.response.headers.update({
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '86400',
-        })
-        self.response.status = 204
-        return None
+        if 'Origin' in self.request.headers:
+            self.response.headers.update({
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+                'Access-Control-Max-Age': '86400',
+            })
+            return self._204()
+        else:
+            return self._400()
 
     def index(self):
         result = []
@@ -150,8 +159,7 @@ class AnnotatorStore(object):
         anno = model.Annotation.from_dict(params)
         anno.save_changes()
 
-        self.response.status = 204
-        return None
+        return self._204()
 
     def delete(self):
         id = self.mapdict['id']
@@ -164,8 +172,7 @@ class AnnotatorStore(object):
         try:
             model.Annotation.delete(id)
 
-            self.response.status = 204
-            return None
+            return self._204()
         except:
             return self._500()
 

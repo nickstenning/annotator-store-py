@@ -225,7 +225,9 @@ class TestAnnotatorStore(object):
 
     def test_annotate_cors_preflight(self):
         url = self.url('annotations')
-        resp = self.app._gen_request('OPTIONS', url)
+        resp = self.app._gen_request('OPTIONS', url, headers={
+            'Origin': 'http://localhost'
+        })
 
         headers = dict(resp.headers)
 
