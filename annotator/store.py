@@ -97,29 +97,24 @@ class AnnotatorStore(object):
             self._404()
         return self.response(environ, start_response)
 
-    def _set_json_header(self):
-        self.response.content_type = 'application/json'
-
     def _404(self):
         self.response.status = 404
         self.response.body = 'Not found'
 
-    def _jsonify(self, _struct):
-        out = json.dumps(_struct)
-        # return out.encode('utf8', 'ignore')
-        return unicode(out)
-    
-    def _jsonpify(self, _struct):
-        self.response.content_type = 'text/javascript'
-        return u'%s(%s);' % (self.request.params['callback'],
-                json.dumps(_struct))
+    def _json(self, result):
+        result_json = json.dumps(result)
+        if 'callback' in self.request.params:
+            self.response.content_type = 'text/javascript'
+            return u'%s(%s);' % (self.request.params['callback'], result_json)
+        else:
+            self.response.content_type = 'application/json'
+            return u'%s' % result_json
 
     def index(self):
         result = []
         for anno in model.Annotation.query.limit(100).all():
             result.append(anno.as_dict())
-        self._set_json_header()
-        return self._jsonify(result)
+        return self._json(result)
 
     def show(self):
         id = self.mapdict['id']
@@ -127,10 +122,9 @@ class AnnotatorStore(object):
         if not anno:
             self._404()
             return ['Not found']
-        self._set_json_header()
         result = anno.as_dict()
-        return self._jsonify(result)
-    
+        return self._json(result)
+
     def create(self):
         if 'json' in self.request.params:
             params = json.loads(self.request.params['json'])
@@ -145,12 +139,7 @@ class AnnotatorStore(object):
         self.response.status = 201
         location = self.map.generate(controller='annotation', action='show', id=anno.id)
         self.response.headers['location'] = location
-        # also return json or jsonp
-        if 'callback' in self.request.params:
-            return self._jsonpify({'id': anno.id})
-        else:
-            self._set_json_header()
-            return self._jsonify({'id': anno.id})
+        return self._json({'id': anno.id})
 
     def update(self):
         id = self.mapdict['id']
@@ -184,7 +173,7 @@ class AnnotatorStore(object):
             except Exception, inst:
                 self.response.status = 500
                 return u'<h1>500 Internal Server Error</h1>Delete failed\n %s'% inst
-    
+
     def search(self):
         params = [ (k,v) for k,v in self.request.params.items() if k not in [ 'all_fields', 'offset', 'limit' ]
                 ]
@@ -216,13 +205,12 @@ class AnnotatorStore(object):
         else:
             results = [ {'id': x.id} for x in results ]
 
-        # TODO: jsonpify
-        qresults = { 
+        qresults = {
                 'total': total,
                 'results': results
                 }
-        self._set_json_header()
-        return self._jsonify(qresults)
+
+        return self._json(qresults)
 
 
 def make_app(global_config, **local_conf):
