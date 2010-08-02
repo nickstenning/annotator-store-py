@@ -8,7 +8,7 @@ except ImportError:
     import simplejson as json
 
 import paste.request
-from routes import Mapper
+import routes
 import webob
 
 import annotator.model as model
@@ -18,68 +18,38 @@ logger = logging.getLogger('annotator')
 class AnnotatorStore(object):
     "Application to provide 'annotation' store."
 
-    def __init__(self, service_path=''):
+    def __init__(self, mount_point='/', resource_name=('annotation', 'annotations')):
         """Create the WSGI application.
 
-        @param service_path: offset url where this application is mounted.
+        @param mount_point: url where this application is mounted.
+        @param resource_name: tuple (singular, plural) of the annotation resource name.
         """
-        if service_path and not service_path.startswith('/'):
-            service_path = '/' + service_path
-        self.service_path = service_path
-        # singular or plural ...
-        self.anno_rest_name = 'annotations'
+        self.mapper = routes.Mapper()
 
-    def get_routes_mapper(self):
-        map = Mapper()
+        mount_point = mount_point if mount_point.startswith('/') else '/' + mount_point
+        sing, plur  = resource_name
 
-        ## ======================
-        ## REST API: /annotations/
+        self.mapper.resource(
+            sing,
+            plur,
+            path_prefix = mount_point,
+            collection = {
+                'search': 'GET'
+            }
+        )
 
-        # some extra additions to standard layout from map.resource
-        # help to make the url layout a bit nicer for those using the web ui
-        map.connect(self.service_path + '/' + self.anno_rest_name + '/delete/:id',
-                controller='annotation',
-                action='delete',
-                conditions=dict(method=['GET']))
-
-        # PUT does not seem connected to create by default
-        map.connect(self.service_path + '/' + self.anno_rest_name,
-                controller='annotation',
-                action='create',
-                conditions=dict(method=['PUT', 'POST']))
-
-        map.resource('annotation', self.anno_rest_name,
-                path_prefix=self.service_path, controller='annotation')
-
-        # map.resource assumes PUT for update but we want to use POST as well
-        # exact mappings for REST seems a hotly contested matter see e.g.
-        # http://www.megginson.com/blogs/quoderat/archives/2005/04/03/post-in-rest-create-update-or-action/
-        # must have this *after* map.resource as otherwise overrides the create
-        # action
-        map.connect(self.service_path + '/%s/:id' % self.anno_rest_name,
-                controller='annotation',
-                action='update',
-                conditions=dict(method=['POST']))
-
-        ## ==========
-        ## Search API
-        map.connect(self.service_path + '/search',
-                controller='annotation', action='search', id=None
-                )
-
-        return map
 
     def __call__(self, environ, start_response):
-        self.environ = environ
-        self.start_response = start_response
-        self.map = self.get_routes_mapper()
-        self.map.environ = environ
+        self.mapper.environ = environ
+        self.url = routes.util.URLGenerator(self.mapper, environ)
+
         path = environ['PATH_INFO']
-        self.mapdict = self.map.match(path)
+        self.mapdict = self.mapper.match(path)
         self.request = webob.Request(environ)
 
         self.response = webob.Response(charset='utf8')
         self.format = self.request.params.get('format', 'json')
+
         if self.format not in ['json']:
             self.response.status = 500
             self.response.body = 'Unknown format: %s' % self.format
@@ -99,7 +69,11 @@ class AnnotatorStore(object):
 
     def _404(self):
         self.response.status = 404
-        self.response.body = 'Not found'
+        return u'Not Found'
+
+    def _500(self):
+        self.response.status = 500
+        return u'Internal Server Error'
 
     def _json(self, result):
         result_json = json.dumps(result)
@@ -119,9 +93,10 @@ class AnnotatorStore(object):
     def show(self):
         id = self.mapdict['id']
         anno = model.Annotation.query.get(id)
+
         if not anno:
-            self._404()
-            return ['Not found']
+            return self._404()
+
         result = anno.as_dict()
         return self._json(result)
 
@@ -136,79 +111,79 @@ class AnnotatorStore(object):
         else:
             anno = model.Annotation.from_dict(params)
         anno.save_changes()
+
         self.response.status = 201
-        location = self.map.generate(controller='annotation', action='show', id=anno.id)
-        self.response.headers['location'] = location
+        self.response.headers['Location'] = self.url('annotation', id=anno.id)
         return self._json({'id': anno.id})
 
     def update(self):
         id = self.mapdict['id']
-        try:
-            existing = model.Annotation.query.get(id)
-        except:
-            status = '400 Bad Request'
-            self.response.status = 400
-            msg = u'<h1>400 Bad Request</h1><p>No such annotation #%s</p>' % id
-            return msg
+
+        anno = model.Annotation.query.get(id)
+
+        if not anno:
+            return self._404()
+
         if 'json' in self.request.params:
             params = json.loads(self.request.params['json'])
         else:
             params = dict(self.request.params)
+
         params['id'] = id
         anno = model.Annotation.from_dict(params)
         anno.save_changes()
+
         self.response.status = 204
         return None
 
     def delete(self):
         id = self.mapdict['id']
-        if id is None:
-            self.response.status = 400
-            return u'<h1>400 Bad Request</h1><p>Bad ID</p>'
-        else:
-            self.response.status = 204 # deleted
-            try:
-                model.Annotation.delete(id)
-                return None
-            except Exception, inst:
-                self.response.status = 500
-                return u'<h1>500 Internal Server Error</h1>Delete failed\n %s'% inst
+
+        anno = model.Annotation.query.get(id)
+
+        if not anno:
+            return self._404()
+
+        try:
+            model.Annotation.delete(id)
+
+            self.response.status = 204
+            return None
+        except:
+            return self._500()
 
     def search(self):
-        params = [ (k,v) for k,v in self.request.params.items() if k not in [ 'all_fields', 'offset', 'limit' ]
-                ]
+        params = [
+            (k,v) for k,v in self.request.params.items() if k not in [ 'all_fields', 'offset', 'limit' ]
+        ]
+
         all_fields = self.request.params.get('all_fields', False)
         all_fields = bool(all_fields)
+
         offset = self.request.params.get('offset', 0)
         limit = int(self.request.params.get('limit', 100))
+
         if limit < 0:
             limit = None
-        # important we use session off model.Annotation as Annotation may be
-        # used by external library (and hence using an external session)
-        if all_fields:
-            q = model.Annotation.query
-        else:
-            # only supported in sqlalchemy >= 0.5
-            # so have to do it the inefficient way
-            # sess = model.Annotation.query.session
-            # q = sess.query(model.Annotation.id)
-            q = model.Annotation.query
+
+        q = model.Annotation.query
+
         for k,v in params:
             kwargs = { k: unicode(v) }
             q = q.filter_by(**kwargs)
+
         total = q.count()
-        q = q.offset(offset)
-        q = q.limit(limit)
-        results = q.all()
+        results = q.offset(offset).limit(limit).all()
+
         if all_fields:
             results = [ x.as_dict() for x in results ]
         else:
             results = [ {'id': x.id} for x in results ]
 
         qresults = {
-                'total': total,
-                'results': results
-                }
+            'total': total,
+            'results': results
+        }
 
         return self._json(qresults)
 
@@ -221,6 +196,7 @@ def make_app(global_config, **local_conf):
     dburi = local_conf['dburi']
     model.repo.configure(dburi)
     model.repo.createdb()
-    app = AnnotatorStore()
+
+    app = AnnotatorStore(mount_point=local_conf['mount_point'])
     return app
 
