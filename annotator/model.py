@@ -96,7 +96,7 @@ class Annotation(RevisionedObjectMixin,StatefulObjectMixin):
     def __str__(self):
         out = u'%s %s' % (self.__class__.__name__, self.as_dict())
         return out.encode('utf8', 'ignore')
-    
+
     def as_dict(self):
         table = class_mapper(self.__class__).mapped_table
         out = {}
@@ -112,7 +112,7 @@ class Annotation(RevisionedObjectMixin,StatefulObjectMixin):
                 out[k] = v
         del out['extras']
         return out
-    
+
     @classmethod
     def from_dict(cls, _dict):
         id = _dict.get('id', None)
@@ -132,12 +132,13 @@ class Annotation(RevisionedObjectMixin,StatefulObjectMixin):
                 if _dict['ranges']:
                     anno.range = _dict['ranges'][0]
             else:
+                anno.extras = anno.extras or {}
                 anno.extras[k] = v
         return anno
 
 def map_annotation_object(mapper, annotation_table,
         annotation_revision_table=None, make_revisioned=False):
-    '''Map Annotation object with supplied mapper and annotation_table. 
+    '''Map Annotation object with supplied mapper and annotation_table.
     '''
     if make_revisioned:
         mapper(Annotation, annotation_table,
