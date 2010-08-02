@@ -140,7 +140,9 @@ class AnnotatorStore(object):
 
         self.response.status = 201
         self.response.headers['Location'] = self.url('annotation', id=anno.id)
-        return self._json({'id': anno.id})
+
+        result = anno.as_dict()
+        return self._json(result)
 
     def update(self):
         id = self.mapdict['id']
