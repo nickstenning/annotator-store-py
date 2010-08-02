@@ -5,7 +5,6 @@ sqlalchemy and webob.
 
 .. _Annotator: http://github.com/nickstenning/annotator
 
-
 Getting Started
 ===============
 
@@ -40,44 +39,40 @@ The RESTful interface is provided by the WSGI application in annotator/store.py.
 
 It can be mounted anywhere you like and provides a RESTful resource 'annotations'.
 
-For example if you have mounted it at '/store' you would have:
+For example if you have mounted it at '/store' you would have::
 
-    GET /store/annotations # list annotation
-    POST /store/annotations # create
-    GET /store/annotations/id # get annotation
-    POST /store/annotations/id # update annotation
-    DELETE /store/annotations/id # delete annotation
+    GET    /store/annotations      # list
+    POST   /store/annotations      # create
+    GET    /store/annotations/{id} # show
+    PUT    /store/annotations/{id} # update
+    DELETE /store/annotations/{id} # delete
 
 Attributes for these methods (in particular annotation values) may be provided
 either as individual query parameters or as as json payload (encoded in
-standard way as argument to a parameter named json). Returned data will be json
-encoded.
+standard way as argument to a parameter named json). Returned data will be
+JSON encoded. If a "callback" query parameter is supplied, any response will be JSONP encoded using the value of "callback" as the name of the callback function.
 
 Notes:
 
-  * CREATE: In standard RESTFul fashion, CREATE returns a Location
-    header pointing to created annotation. For convenience, it also returns a
-    JSON body with a id of newly created object as the single key/value.
-    Furthermore, there is also JSONP support via a 'callback' parameter -- if
-    there is a callback=function_name in parameters then we return javascript
-    of form: `function_name({'id': id})`
+  * A create request returns a Location header redirecting to the created
+    annotation.
 
 Searching
 ---------
 
-Search API is located at: {mount-point}/search
+Search API is located at: {mount_point}/annotations/search
 
 Results are returned in JSON format::
 
     {
-        'total': total-number-of-results,
-        'results': list-of-results-in-json-format
+        'total': number of results,
+        'results': results list
     }
 
 You can search by any annotation attribute (but not "extras"). For example to
-search for annotation with a particular doc uri "our-doc-uri" you'd visit::
+search for annotation with a particular 'uri' field you'd visit::
 
-    .../search?uri=our-doc-uri
+    /annotations/search?uri=http://example.com
 
 In addition to search parameters there are three additional control parameters:
 
