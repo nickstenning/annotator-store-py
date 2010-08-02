@@ -38,6 +38,13 @@ class AnnotatorStore(object):
             }
         )
 
+        with self.mapper.submapper(
+            action='_cors_preflight',
+            path_prefix=mount_point,
+            conditions=dict(method=["OPTIONS"])
+        ) as m:
+            m.connect(None, plur)
+            m.connect(None, plur + '/{id}')
 
     def __call__(self, environ, start_response):
         self.mapper.environ = environ
@@ -46,7 +53,6 @@ class AnnotatorStore(object):
         path = environ['PATH_INFO']
         self.mapdict = self.mapper.match(path)
         self.request = webob.Request(environ)
-
         self.response = webob.Response(charset='utf8')
         self.format = self.request.params.get('format', 'json')
 
@@ -64,7 +70,8 @@ class AnnotatorStore(object):
             if self.response.status_int == 204:
                 del self.response.headers['content-type']
         else:
-            self._404()
+            self.response.unicode_body = self._404()
+
         return self.response(environ, start_response)
 
     def _404(self):
@@ -83,6 +90,16 @@ class AnnotatorStore(object):
         else:
             self.response.content_type = 'application/json'
             return u'%s' % result_json
+
+    def _cors_preflight(self):
+        self.response.headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '86400',
+        })
+        self.response.status = 204
+        return None
 
     def index(self):
         result = []
@@ -197,6 +214,6 @@ def make_app(global_config, **local_conf):
     model.repo.configure(dburi)
     model.repo.createdb()
 
-    app = AnnotatorStore(mount_point=local_conf['mount_point'])
+    app = AnnotatorStore(mount_point=local_conf.get('mount_point') or '/')
     return app
 

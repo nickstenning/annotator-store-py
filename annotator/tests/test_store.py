@@ -222,3 +222,15 @@ class TestAnnotatorStore(object):
         exp = 'jsonp1234(%s);' % json.dumps(anno)
 
         assert resp.body == exp, "Response was not JSONP."
+
+    def test_annotate_cors_preflight(self):
+        url = self.url('annotations')
+        resp = self.app._gen_request('OPTIONS', url)
+
+        headers = dict(resp.headers)
+
+        assert headers['Access-Control-Allow-Methods'] == 'GET, PUT, POST, DELETE, OPTIONS', \
+            "Did not send the right Access-Control-Allow-Methods header."
+
+        assert headers['Access-Control-Allow-Origin'] == '*', \
+            "Did not send the right Access-Control-Allow-Origin header."
