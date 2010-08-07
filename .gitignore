@@ -1,2 +1,6 @@
-/annotator.egg-info/
+*.pyc
+/*.egg-info/
 /*.db
+# vim swap files
+.*.swp
+sandbox/*
