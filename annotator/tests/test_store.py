@@ -40,13 +40,6 @@ class TestRoutes(object):
             assert out['action'] == action, \
                 "Action '%s' for '%s %s' was not '%s'." % (out['action'], method, url, action)
 
-def create_test_annotation():
-    anno = model.Annotation(uri=u'http://xyz.com', range=u'1.0 2.0', text=u'blah text')
-    model.Session.commit()
-    anno = anno.as_dict()
-    model.Session.remove()
-    return anno
-
 class TestAnnotatorStore(object):
 
     def __init__(self, *args, **kwargs):
@@ -60,8 +53,15 @@ class TestAnnotatorStore(object):
         model.Session.commit()
         model.Session.remove()
 
+    def create_test_annotation(self):
+        anno = model.Annotation(uri=u'http://xyz.com', range=u'1.0 2.0', text=u'blah text')
+        model.Session.commit()
+        anno = anno.as_dict()
+        model.Session.remove()
+        return anno
+
     def test_annotate_index(self):
-        anno = create_test_annotation()
+        anno = self.create_test_annotation()
         resp = self.app.get(self.url('annotations'))
 
         assert resp.status == 200, "Response code was not 200 OK."
@@ -76,7 +76,7 @@ class TestAnnotatorStore(object):
             "The URI of the first annotation in the response was wrong."
 
     def test_annotate_show(self):
-        anno = create_test_annotation()
+        anno = self.create_test_annotation()
         rsrc = self.url('annotation', id=anno['id'])
         resp = self.app.get(rsrc)
 
@@ -122,7 +122,7 @@ class TestAnnotatorStore(object):
         assert loc.endswith(exp), "Location header '%s' was not '%s'" % (loc, exp)
 
     def test_annotate_update(self):
-        anno = create_test_annotation()
+        anno = self.create_test_annotation()
         rsrc = self.url('annotation', id=anno['id'])
 
         params  = { 'text': 'This is a NEW note, a NEW note I say.' }
@@ -136,7 +136,7 @@ class TestAnnotatorStore(object):
         assert anno.text == params['text']
 
     def test_annotate_delete(self):
-        anno = create_test_annotation()
+        anno = self.create_test_annotation()
         rsrc = self.url('annotation', id=anno['id'])
         resp = self.app.delete(rsrc)
 
@@ -207,7 +207,7 @@ class TestAnnotatorStore(object):
         assert len(body['results']) == 3, body
 
     def test_annotate_jsonp(self):
-        anno = create_test_annotation()
+        anno = self.create_test_annotation()
 
         url = self.url('annotations', callback='jsonp1234')
         resp = self.app.get(url)
