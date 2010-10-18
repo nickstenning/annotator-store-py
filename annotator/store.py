@@ -127,10 +127,7 @@ class AnnotatorStore(object):
         return self._json(result)
 
     def create(self):
-        if 'json' in self.request.params:
-            params = json.loads(self.request.params['json'])
-        else:
-            params = dict(self.request.params)
+        params = json.loads(dict(self.request.params).keys()[0])
         if isinstance(params, list):
             for objdict in params:
                 anno = model.Annotation.from_dict(objdict)
@@ -152,12 +149,12 @@ class AnnotatorStore(object):
         if not anno:
             return self._404()
 
-        if 'json' in self.request.params:
-            params = json.loads(self.request.params['json'])
-        else:
-            params = dict(self.request.params)
+        params = json.loads(self.request.params.keys()[0])
 
         params['id'] = id
+        # set by db not client ...
+        if 'created' in params:
+            del params['created']
         anno = model.Annotation.from_dict(params)
         anno.save_changes()
 
