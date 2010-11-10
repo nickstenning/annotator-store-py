@@ -99,7 +99,10 @@ class AnnotatorStoreTestBase(object):
         jsonVal = json.dumps(params).encode('utf8')
 
         url    = self.url('annotations')
-        resp   = self.app.post(url, jsonVal)
+        # Couch v0.10 did not require content type but v1.0.1 does
+        resp   = self.app.post(url, jsonVal, headers={'Content-Type':
+        'application/json'}
+        )
         respId = json.loads(resp.body)['id']
 
         # Check response code
@@ -226,7 +229,7 @@ class AnnotatorStoreTestBase(object):
         resp = self.app.get(url)
 
         exp = 'jsonp1234({'
-        assert resp.body.startswith(exp), "Response was not JSONP."
+        assert resp.body.startswith(exp), "Response not JSONP: %s" % resp.body
 
     def test_annotate_cors_preflight(self):
         url = self.url('annotations')
