@@ -33,8 +33,8 @@ and all the marginalia media files (with improvements).
 """,
     license = __license__,
     keywords = 'annotation web javascript',
-    url = 'http://knowledgeforge.net/okfn/annotator/', 
-    download_url = 'http://knowledgeforge.net/okfn/annotator/',
+    url = 'http://github.com/nickstenning/annotator-store-py', 
+    download_url = 'http://github.com/nickstenning/annotator-store-py',
     zip_safe=False,
     classifiers = [
         'Development Status :: 3 - Alpha',
