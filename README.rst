@@ -3,6 +3,8 @@ Reference implementation backend for `Annotator` web annotation system.
 Defines the reference RESTFul API and uses RDBMS storage. Python-based using
 sqlalchemy and webob.
 
+There is also an experimental CouchDB implementation.
+
 .. _Annotator: http://github.com/nickstenning/annotator
 
 Getting Started
@@ -109,18 +111,24 @@ Annotations have the following attributes:
 Changelog
 =========
 
-
 HEAD
 ----
 
+v0.4 2010-11-10
+---------------
+
+**Beta release**: this annotator store has now been successfully used in
+production deployments.
+
   * New attributes on Annotation: user, tags
   * Support for jsonp and returning id on annotation create
-  * Allow arbitrary attributes on annotation via "extras" field
+  * Allow arbitrary attributes on annotations
   * Searching annotations (essential for multi-document annotation!)
   * Improved documentation
   * Support locating annotation RESTFul url within store (e.g.
     {store}/annotations instead {store}/annotation)
-
+  * Preliminary CORS support for cross-domain requests
+  * Preliminary CouchDB support
 
 v0.3 2009-10-18
 ---------------
