@@ -1,38 +1,48 @@
 Reference implementation backend for `Annotator` web annotation system.
 
-Defines the reference RESTFul API and uses RDBMS storage. Python-based using
-sqlalchemy and webob.
-
-There is also an experimental CouchDB implementation.
+Defines the reference RESTFul API and connects to a database backend to
+persist annotations created by the frontend, Annotator_.
 
 .. _Annotator: http://github.com/nickstenning/annotator
+
+There is also an experimental CouchDB implementation. See the `couchdb` branch
+of the repository.
 
 Getting Started
 ===============
 
-Get the annotator code and install it (using pip)::
+The following instructions assume you have a working installation of `python`
+(2.6 or higher) and `sqlite` (any recent version). You will also need `pip` and
+`virtualenv`, which can be installed quickly with one command::
 
-    # check out the git repo
+    easy_install virtualenv
+
+Now, you should be ok to set up annotator-store-py::
+
     git clone git://github.com/nickstenning/annotator-store-py.git
-    cd annotator
-    pip -E ../pyenv install -e .
+    cd annotator-store-py
+    pip install -E pyenv -r requirements.txt -e .
 
-NB: All dependencies should be installed automatically. However json support is
-requried. In python >= 2.6 this is part of the standard library (json) but if
-you have python <= 2.5 install you should install simplejson instead.
+If that worked ok, you should see something like::
 
-You will also need sqlite and python db connector for it.
+    [...]
+    Successfully installed annotator HTTPEncode httplib2 Paste PasteDeploy PasteScript routes SQLAlchemy webob wsgifilter
+    Cleaning up...
 
-Try out the demo (requires PasteScript)::
+You should now be able to run the demo server::
 
+    source pyenv/bin/activate
     paster serve store.ini
 
-Visit the url::
+You might a deprecation warning from SQLAlchemy. We're working on removing this but
+in the mean time you can safely ignore it. You can take a peek at the (little)
+that the backend is now doing::
 
-    http://localhost:5000/annotations/
+    curl -i http://localhost:5000/annotations
 
-Response should be the empty list [] as no annotations are in the store
-
+You'll see that the store responds with "[]": there aren't any annotations in
+the store at the moment. That's not surprising: you haven't created any. For that,
+you'll need to go get Annotator_ and hook it up to the backend.
 
 RESTFul Interface
 =================
