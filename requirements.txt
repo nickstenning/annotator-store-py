@@ -3,3 +3,4 @@ Paste==1.7.5.1
 PasteScript==1.7.3
 routes==1.12.3
 wsgifilter==0.2
+couchdb==0.8

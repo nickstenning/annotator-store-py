@@ -5,3 +5,4 @@ PasteScript
 routes
 wsgifilter
 nose
+couchdb
