@@ -1,2 +1,0 @@
-recursive-include annotater/marginalia *.js *.css
-recursive-include demo *.py *.html

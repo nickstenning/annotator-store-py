@@ -1,0 +1,7 @@
+# This set of requirements are not guaranteed to work at all times!
+SQLAlchemy
+Paste
+PasteScript
+routes
+wsgifilter
+nose
