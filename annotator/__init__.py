@@ -1,4 +1,5 @@
-"""Backend(s) for web annotation.
+"""
+Backend for web annotation.
 
 @copyright: (c) 2006-2010 Open Knowledge Foundation
 """

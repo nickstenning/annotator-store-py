@@ -1,6 +1,4 @@
 *.pyc
 /*.egg-info/
-/*.db
-# vim swap files
-.*.swp
-sandbox/*
+/db/*.db
+/db/*.sqlite3

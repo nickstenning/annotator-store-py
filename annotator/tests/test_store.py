@@ -111,7 +111,7 @@ class AnnotatorStoreTestBase(object):
         # Check 'id' (not supplied) provided in response
         assert respId is not None, "'id' not set on create"
 
-        self._check_create(respId, params) 
+        self._check_create(respId, params)
 
         # Check response redirects to resource 'show' URL
         exp = self.url('annotation', id=respId)
@@ -142,7 +142,7 @@ class AnnotatorStoreTestBase(object):
         assert resp.status in [204,201], "Response code was not 204 No Content."
 
         self._check_update(anno['id'], params)
-    
+
     def _check_update(self, _id, params):
         anno = model.Annotation.query.get(_id)
         assert anno.text == params['text']
