@@ -40,8 +40,7 @@ class TestRoutes(object):
             assert out['action'] == action, \
                 "Action '%s' for '%s %s' was not '%s'." % (out['action'], method, url, action)
 
-
-class AnnotatorStoreTestBase(object):
+class TestAnnotatorStore(object):
 
     def __init__(self, *args, **kwargs):
         import paste.fixture, routes.util
@@ -96,13 +95,10 @@ class AnnotatorStoreTestBase(object):
             'uri': 'http://localhost/',
             'ranges': [{'start': 'p', 'end': 'p'}]
         }
-        jsonVal = json.dumps(params).encode('utf8')
+        jsonVal = json.dumps(params)
 
         url    = self.url('annotations')
-        # Couch v0.10 did not require content type but v1.0.1 does
-        resp   = self.app.post(url, jsonVal, headers={'Content-Type':
-        'application/json'}
-        )
+        resp   = self.app.post(url, {'json': jsonVal})
         respId = json.loads(resp.body)['id']
 
         # Check response code
@@ -111,15 +107,6 @@ class AnnotatorStoreTestBase(object):
         # Check 'id' (not supplied) provided in response
         assert respId is not None, "'id' not set on create"
 
-        self._check_create(respId, params)
-
-        # Check response redirects to resource 'show' URL
-        exp = self.url('annotation', id=respId)
-        loc = dict(resp.headers)['Location']
-        # TODO get URLGenerator to respect HTTP_HOST
-        assert loc.endswith(exp), "Location header '%s' was not '%s'" % (loc, exp)
-
-    def _check_create(self, respId, params):
         # Check fields correctly set in database
         anno = model.Annotation.query.get(respId)
         anno = anno.as_dict()
@@ -128,37 +115,34 @@ class AnnotatorStoreTestBase(object):
             assert anno[k] == params[k], \
                 "'%s' sent to server, but not set in database." % k
 
+        # Check response redirects to resource 'show' URL
+        exp = self.url('annotation', id=anno['id'])
+        loc = dict(resp.headers)['Location']
+        # TODO get URLGenerator to respect HTTP_HOST
+        assert loc.endswith(exp), "Location header '%s' was not '%s'" % (loc, exp)
+
     def test_annotate_update(self):
         anno = self.create_test_annotation()
         rsrc = self.url('annotation', id=anno['id'])
 
-        params  = dict(anno)
-        params['text'] = 'This is a NEW note, a NEW note I say.'
+        params  = { 'text': 'This is a NEW note, a NEW note I say.' }
         jsonVal = json.dumps(params)
 
-        resp = self.app.put(rsrc, jsonVal)
+        resp = self.app.put(rsrc, {'json': jsonVal})
 
-        # either 201 or 204 is acceptable (couchdb does 201)
-        assert resp.status in [204,201], "Response code was not 204 No Content."
+        assert resp.status == 204, "Response code was not 204 No Content."
 
-        self._check_update(anno['id'], params)
-
-    def _check_update(self, _id, params):
-        anno = model.Annotation.query.get(_id)
+        anno = model.Annotation.query.get(anno['id'])
         assert anno.text == params['text']
 
     def test_annotate_delete(self):
         anno = self.create_test_annotation()
-        # _rev option is for couchdb
-        rsrc = self.url('annotation', id=anno['id'], rev=anno.get('_rev', ''))
+        rsrc = self.url('annotation', id=anno['id'])
         resp = self.app.delete(rsrc)
 
-        assert resp.status in [204,200], \
-            "Response code was not 204 No Content or 200 OK."
-        self._check_delete(anno['id'])
+        assert resp.status == 204, "Response code was not 204 No Content."
 
-    def _check_delete(self, _id):
-        tmp = model.Annotation.query.get(_id)
+        tmp = model.Annotation.query.get(anno['id'])
         assert tmp is None, "Annotation was not deleted."
 
     def test_annotate_delete_not_found(self):
@@ -225,11 +209,19 @@ class AnnotatorStoreTestBase(object):
     def test_annotate_jsonp(self):
         anno = self.create_test_annotation()
 
+        url = self.url('annotations', callback='jsonp1234')
+        resp = self.app.get(url)
+
+        exp = 'jsonp1234(%s);' % json.dumps([anno])
+
+        assert resp.body == exp, "Response was not JSONP."
+
         url = self.url('annotation', id=anno['id'], callback='jsonp1234')
         resp = self.app.get(url)
 
-        exp = 'jsonp1234({'
-        assert resp.body.startswith(exp), "Response not JSONP: %s" % resp.body
+        exp = 'jsonp1234(%s);' % json.dumps(anno)
+
+        assert resp.body == exp, "Response was not JSONP."
 
     def test_annotate_cors_preflight(self):
         url = self.url('annotations')
@@ -244,8 +236,3 @@ class AnnotatorStoreTestBase(object):
 
         assert headers['Access-Control-Allow-Origin'] == '*', \
             "Did not send the right Access-Control-Allow-Origin header."
-
-
-class TestAnnotatorStore(AnnotatorStoreTestBase):
-    pass
-
