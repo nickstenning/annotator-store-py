@@ -1,41 +1,21 @@
 from setuptools import setup, find_packages
-
 from annotator import __version__, __license__, __author__
 
 setup(
     name = 'annotator',
     version = __version__,
     packages = find_packages(),
-    install_requires = [
-        'SQLAlchemy>=0.4.8',
-        # 'FormAlchemy>=1.0',
-        'Paste >= 1.0',
-        'PasteDeploy',
-        'routes>=1.7',
-        'wsgifilter>=0.2'
-        # for tests
-        # 'nose',
-        ],
-    scripts = [],
+    install_requires = open('./requirements.txt').readlines(),
 
     # metadata for upload to PyPI
     author = __author__,
-    author_email = 'info@okfn.org',
-    description = \
-'Inline web annotation application and middleware using javascript and WSGI',
-    long_description = \
-"""
-Inline javascript-based web annotation library incorporating Marginalia
-(http://www.geof.net/code/annotation). Package includeds a database-backed
-annotation store with RESTFul (WSGI-powered) web-interface, abstraction layer
-around marginalia to make it easy to incorporate it into your web application
-and all the marginalia media files (with improvements).
-""",
+    author_email = 'annotator@okfn.org',
+    description = 'Inline web annotation application and middleware using javascript and WSGI',
+    long_description = 'Inline javascript-based web annotation library. Package includeds a database-backed annotation store with RESTFul (WSGI-powered) web-interface.',
     license = __license__,
     keywords = 'annotation web javascript',
-    url = 'http://github.com/nickstenning/annotator-store-py', 
+    url = 'http://github.com/nickstenning/annotator-store-py',
     download_url = 'http://github.com/nickstenning/annotator-store-py',
-    zip_safe=False,
     classifiers = [
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -43,9 +23,7 @@ and all the marginalia media files (with improvements).
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Topic :: Software Development :: Libraries :: Python Modules'],
-    entry_points='''
-    [paste.app_factory]
-    store = annotator.store:make_app
-    ''',
+        'Topic :: Software Development :: Libraries :: Python Modules'
+    ],
+    entry_points = '[paste.app_factory]\nstore = annotator.store:make_app',
 )
