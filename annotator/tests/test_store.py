@@ -1,10 +1,8 @@
 import annotator.model as model
+from annotator.model import Annotation
 import annotator.store as store
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import json
 
 class TestRoutes(object):
 
@@ -45,19 +43,20 @@ class TestAnnotatorStore(object):
     def __init__(self, *args, **kwargs):
         import paste.fixture, routes.util
         self.store = store.AnnotatorStore()
+        self.sess  = model.Session()
         self.app   = paste.fixture.TestApp(self.store)
         self.url   = routes.util.URLGenerator(self.store.mapper, {})
 
     def teardown(self):
-        model.Session.query(model.Annotation).delete()
-        model.Session.commit()
-        model.Session.remove()
+        self.sess.query(Annotation).delete()
+        self.sess.commit()
+        self.sess.close()
 
     def create_test_annotation(self):
-        anno = model.Annotation(uri=u'http://xyz.com', range=u'1.0 2.0', text=u'blah text')
-        model.Session.commit()
+        anno = Annotation(uri=u'http://xyz.com', ranges=[u'1.0 2.0'], text=u'blah text')
+        self.sess.add(anno)
+        self.sess.commit()
         anno = anno.as_dict()
-        model.Session.remove()
         return anno
 
     def test_annotate_index(self):
@@ -80,8 +79,8 @@ class TestAnnotatorStore(object):
         rsrc = self.url('annotation', id=anno['id'])
         resp = self.app.get(rsrc)
 
-        assert anno['text']  in resp, "Result did not contain annotation text."
-        assert anno['range'] in resp, "Result did not contain annotation range."
+        assert json.dumps(anno['text'])   in resp, "Result did not contain annotation text."
+        assert json.dumps(anno['ranges']) in resp, "Result did not contain annotation ranges."
 
     def test_annotate_show_not_found(self):
         rsrc = self.url('annotation', id='nonexistent')
@@ -108,7 +107,7 @@ class TestAnnotatorStore(object):
         assert respId is not None, "'id' not set on create"
 
         # Check fields correctly set in database
-        anno = model.Annotation.query.get(respId)
+        anno = self.sess.query(Annotation).get(respId)
         anno = anno.as_dict()
 
         for k in params:
@@ -132,7 +131,7 @@ class TestAnnotatorStore(object):
 
         assert resp.status == 204, "Response code was not 204 No Content."
 
-        anno = model.Annotation.query.get(anno['id'])
+        anno = self.sess.query(Annotation).get(anno['id'])
         assert anno.text == params['text']
 
     def test_annotate_delete(self):
@@ -142,7 +141,7 @@ class TestAnnotatorStore(object):
 
         assert resp.status == 204, "Response code was not 204 No Content."
 
-        tmp = model.Annotation.query.get(anno['id'])
+        tmp = self.sess.query(Annotation).get(anno['id'])
         assert tmp is None, "Annotation was not deleted."
 
     def test_annotate_delete_not_found(self):
@@ -156,25 +155,27 @@ class TestAnnotatorStore(object):
         uri2 = u'urn:uuid:xxxxx'
         user = u'levin'
         user2 = u'anna'
-        anno = model.Annotation(
+        anno = Annotation(
                 uri=uri1,
                 text=uri1,
                 user=user,
                 )
-        anno2 = model.Annotation(
+        anno2 = Annotation(
                 uri=uri1,
                 text=uri1 + uri1,
                 user=user2,
                 )
-        anno3 = model.Annotation(
+        anno3 = Annotation(
                 uri=uri2,
                 text=uri2,
                 user=user
                 )
-        model.Session.commit()
+
+        self.sess.add_all([anno, anno2, anno3])
+        self.sess.commit()
+
         annoid = anno.id
         anno2id = anno2.id
-        model.Session.remove()
 
         url = self.url('search_annotations')
         res = self.app.get(url)
@@ -198,7 +199,7 @@ class TestAnnotatorStore(object):
 
         url = self.url('search_annotations', uri=uri1)
         res = self.app.get(url)
-        body = model.json.loads(res.body)
+        body = json.loads(res.body)
         assert body['results'][0].keys() == ['id'], body['results']
 
         url = self.url('search_annotations', limit=-1)

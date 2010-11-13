@@ -12,6 +12,7 @@ import routes
 import webob
 
 import annotator.model as model
+from annotator.model import Annotation, Session
 
 logger = logging.getLogger('annotator')
 
@@ -47,6 +48,7 @@ class AnnotatorStore(object):
             m.connect(None, plur + '/{id}')
 
     def __call__(self, environ, start_response):
+        self.session = model.Session()
         self.mapper.environ = environ
         self.url = routes.util.URLGenerator(self.mapper, environ)
 
@@ -72,6 +74,7 @@ class AnnotatorStore(object):
         else:
             self.response.unicode_body = self._404()
 
+        self.session.close()
         return self.response(environ, start_response)
 
     def _204(self):
@@ -112,13 +115,13 @@ class AnnotatorStore(object):
 
     def index(self):
         result = []
-        for anno in model.Annotation.query.limit(100).all():
+        for anno in self.session.query(Annotation).limit(100).all():
             result.append(anno.as_dict())
         return self._json(result)
 
     def show(self):
         id = self.mapdict['id']
-        anno = model.Annotation.query.get(id)
+        anno = self.session.query(Annotation).get(id)
 
         if not anno:
             return self._404()
@@ -133,10 +136,12 @@ class AnnotatorStore(object):
             params = dict(self.request.params)
         if isinstance(params, list):
             for objdict in params:
-                anno = model.Annotation.from_dict(objdict)
+                anno = Annotation.from_dict(objdict)
         else:
-            anno = model.Annotation.from_dict(params)
-        anno.save_changes()
+            anno = Annotation.from_dict(params)
+
+        self.session.add(anno)
+        self.session.commit()
 
         self.response.status = 201
         self.response.headers['Location'] = self.url('annotation', id=anno.id)
@@ -147,7 +152,7 @@ class AnnotatorStore(object):
     def update(self):
         id = self.mapdict['id']
 
-        anno = model.Annotation.query.get(id)
+        anno = self.session.query(Annotation).get(id)
 
         if not anno:
             return self._404()
@@ -158,21 +163,23 @@ class AnnotatorStore(object):
             params = dict(self.request.params)
 
         params['id'] = id
-        anno = model.Annotation.from_dict(params)
-        anno.save_changes()
+        anno.merge_dict(params)
+
+        self.session.commit()
 
         return self._204()
 
     def delete(self):
         id = self.mapdict['id']
 
-        anno = model.Annotation.query.get(id)
+        anno = self.session.query(Annotation).get(id)
 
         if not anno:
             return self._404()
 
         try:
-            model.Annotation.delete(id)
+            self.session.delete(anno)
+            self.session.commit()
 
             return self._204()
         except:
@@ -192,7 +199,7 @@ class AnnotatorStore(object):
         if limit < 0:
             limit = None
 
-        q = model.Annotation.query
+        q = self.session.query(Annotation)
 
         for k,v in params:
             kwargs = { k: unicode(v) }
@@ -219,9 +226,8 @@ def make_app(global_config, **local_conf):
 
     Designed for use by paster or modwsgi etc
     '''
-    dburi = local_conf['dburi']
-    model.repo.configure(dburi)
-    model.repo.createdb()
+    model.configure(local_conf['dburi'])
+    model.createdb()
 
     app = AnnotatorStore(mount_point=local_conf.get('mount_point') or '/')
     return app
