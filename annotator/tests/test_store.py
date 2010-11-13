@@ -96,12 +96,19 @@ class TestAnnotatorStore(object):
         }
         jsonVal = json.dumps(params)
 
-        url    = self.url('annotations')
-        resp   = self.app.post(url, {'json': jsonVal})
-        respId = json.loads(resp.body)['id']
+        url     = self.url('annotations')
+        resp    = self.app.post(url, {'json': jsonVal})
+        headers = dict(resp.headers)
 
         # Check response code
-        assert resp.status == 201, "Response code was not 201 Created."
+        assert resp.status == 303, "Response code was not 303 See Other."
+
+        # Check redirect location
+        assert "Location" in headers, "Location header was not set."
+
+        print resp.headers
+        resp = self.app.get(headers["Location"])
+        respId = json.loads(resp.body)['id']
 
         # Check 'id' (not supplied) provided in response
         assert respId is not None, "'id' not set on create"
@@ -116,7 +123,7 @@ class TestAnnotatorStore(object):
 
         # Check response redirects to resource 'show' URL
         exp = self.url('annotation', id=anno['id'])
-        loc = dict(resp.headers)['Location']
+        loc = headers['Location']
         # TODO get URLGenerator to respect HTTP_HOST
         assert loc.endswith(exp), "Location header '%s' was not '%s'" % (loc, exp)
 
@@ -129,10 +136,11 @@ class TestAnnotatorStore(object):
 
         resp = self.app.put(rsrc, {'json': jsonVal})
 
-        assert resp.status == 204, "Response code was not 204 No Content."
+        assert resp.status == 200, "Response code was not 200 OK."
 
         anno = self.sess.query(Annotation).get(anno['id'])
-        assert anno.text == params['text']
+        assert anno.text == params['text'], "Text not updated in database"
+        assert json.loads(resp.body)['text'] == params['text'], "Text not updated in HTTP response"
 
     def test_annotate_delete(self):
         anno = self.create_test_annotation()
@@ -232,8 +240,11 @@ class TestAnnotatorStore(object):
 
         headers = dict(resp.headers)
 
-        assert headers['Access-Control-Allow-Methods'] == 'GET, PUT, POST, DELETE, OPTIONS', \
+        assert headers['Access-Control-Allow-Methods'] == 'GET, POST, PUT, DELETE', \
             "Did not send the right Access-Control-Allow-Methods header."
 
         assert headers['Access-Control-Allow-Origin'] == '*', \
             "Did not send the right Access-Control-Allow-Origin header."
+
+        assert headers['Access-Control-Expose-Headers'] == 'Location', \
+                "Did not send the right Access-Control-Expose-Headers header."

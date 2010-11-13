@@ -40,7 +40,7 @@ class AnnotatorStore(object):
         )
 
         with self.mapper.submapper(
-            action='_cors_preflight',
+            action='cors_preflight',
             path_prefix=mount_point,
             conditions=dict(method=["OPTIONS"])
         ) as m:
@@ -57,6 +57,14 @@ class AnnotatorStore(object):
         self.request = webob.Request(environ)
         self.response = webob.Response(charset='utf8')
         self.format = self.request.params.get('format', 'json')
+
+        # CORS headers
+        self.response.headers.update({
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Expose-Headers': 'Location',
+            'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE',
+            'Access-Control-Max-Age': '86400',
+        })
 
         if self.format not in ['json']:
             self.response.status = 500
@@ -82,8 +90,8 @@ class AnnotatorStore(object):
         return None
 
     def _400(self):
-           self.response.status = 400
-           return u'Bad Request'
+        self.response.status = 400
+        return u'Bad Request'
 
     def _404(self):
         self.response.status = 404
@@ -101,17 +109,6 @@ class AnnotatorStore(object):
         else:
             self.response.content_type = 'application/json'
             return u'%s' % result_json
-
-    def _cors_preflight(self):
-        if 'Origin' in self.request.headers:
-            self.response.headers.update({
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, PUT, POST, DELETE, OPTIONS',
-                'Access-Control-Max-Age': '86400',
-            })
-            return self._204()
-        else:
-            return self._400()
 
     def index(self):
         result = []
@@ -134,6 +131,7 @@ class AnnotatorStore(object):
             params = json.loads(self.request.params['json'])
         else:
             params = dict(self.request.params)
+
         if isinstance(params, list):
             for objdict in params:
                 anno = Annotation.from_dict(objdict)
@@ -143,11 +141,10 @@ class AnnotatorStore(object):
         self.session.add(anno)
         self.session.commit()
 
-        self.response.status = 201
+        self.response.status = 303
         self.response.headers['Location'] = self.url('annotation', id=anno.id)
 
-        result = anno.as_dict()
-        return self._json(result)
+        return None
 
     def update(self):
         id = self.mapdict['id']
@@ -167,7 +164,7 @@ class AnnotatorStore(object):
 
         self.session.commit()
 
-        return self._204()
+        return self._json(anno.as_dict())
 
     def delete(self):
         id = self.mapdict['id']
@@ -220,6 +217,9 @@ class AnnotatorStore(object):
 
         return self._json(qresults)
 
+    def cors_preflight(self):
+        # CORS headers already added in __call__
+        return self._204()
 
 def make_app(global_config, **local_conf):
     '''Make a wsgi app and return it
