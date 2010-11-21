@@ -62,7 +62,8 @@ For example if you have mounted it at '/store' you would have::
 Attributes for these methods (in particular annotation values) may be provided
 either as individual query parameters or as as json payload (encoded in
 standard way as argument to a parameter named json). Returned data will be
-JSON encoded. If a "callback" query parameter is supplied, any response will be JSONP encoded using the value of "callback" as the name of the callback function.
+JSON encoded. If a "callback" query parameter is supplied, any response will be 
+JSONP encoded using the value of "callback" as the name of the callback function.
 
 Notes:
 
@@ -98,25 +99,25 @@ In addition to search parameters there are three additional control parameters:
 Specification of Annotations
 ============================
 
-Annotations have the following attributes:
+Annotations can have the following attributes:
 
-  * id: usually a uuid but up to implementing backend
+  * id: unique identifier of the annotation -- usually provided by the store at creation.
   * uri: document identifier
   * user: an identifier for the user who created the annotation. To avoid
     cross-application collision it is recommended that you either:
     * Generate uuids for your users stored as: urn:uuid:{uuid} (or just {uuid})
-    * (or) Prefix your usernames with a unique (e.g. uuid) string (e.g.
-      {uuid-identifying-application}::{your-username}
-  * note: text of annotation
+    * (or) Prefix your usernames with a unique (e.g. uuid) string (e.g. {uuid-identifying-application}::{your-username}
+  * text: text of annotation
   * range(s): list of range objects. Each range object has:
     * [optional] format: range format (defines syntax/semantics of start end)
     * start: xpath, offset (for default html format)
     * end: xpath, offset (for default html format)
   * [optional] quote (the quoted text -- or snippet thereof)
   * [optional] created (datetime of creation)
-  * "extras": you add arbitrary addtional key/value pairs to annotations
 
-
+You can also add arbitrary additional key/value pairs to annotations, these 
+are serialized as "extras" in the database in this version of the annotation 
+store.
 
 Changelog
 =========
